@@ -42,10 +42,7 @@ const AssignmentNode = ({ id, data }) => {
           ))}
         </select>
       </div>
-      <div>
-        Function:&nbsp;
-        <input type="text" value={data.func || ''} onChange={handleChange('func')} placeholder="e.g. mpcheck(Self)" />
-      </div>
+      {/* Removed manual function input field */}
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
   );
@@ -366,19 +363,19 @@ function Flow() {
 
       if (realSourceNode && realSourceNode.type !== 'timingNode') {
         let funcCall = '';
-        let args = [];
-        if (realSourceNode.data.functionName === 'bufcheck') {
-          args = [realSourceNode.data.target, realSourceNode.data.buff, realSourceNode.data.mode];
-        } else if (realSourceNode.data.functionName === 'getdata') {
-          args = [realSourceNode.data.target, realSourceNode.data.id];
-        } else if (realSourceNode.data.functionName === 'random') {
-          args = [realSourceNode.data.min, realSourceNode.data.max];
-        }
-        // ...add other functionName cases as needed
+let args = [];
+if (realSourceNode.data.functionName === 'bufcheck') {
+  args = [realSourceNode.data.target, realSourceNode.data.buff, realSourceNode.data.mode];
+} else if (realSourceNode.data.functionName === 'getdata') {
+  args = [realSourceNode.data.target, realSourceNode.data.id];
+} else if (realSourceNode.data.functionName === 'random') {
+  args = [realSourceNode.data.min, realSourceNode.data.max];
+}
+// ...add other functionName cases as needed
 
-        const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-        funcCall = `${realSourceNode.data.functionName}(${formattedArgs})`;
-        assignedScript = `${assignedValue}:${funcCall}/`;
+const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+funcCall = `${realSourceNode.data.functionName}(${formattedArgs})`;
+assignedScript = `${assignedValue}:${funcCall}/`;
       } else if (node.data.func) {
         // If no input, use manual function string
         assignedScript = `${assignedValue}:${node.data.func}/`;
