@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef, useMemo } from 'react'; // Added useMemo import
-import { DndProvider, useDrop } from 'react-dnd';
+import { DndProvider, useDrop, useDrag } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactFlow, {
   MiniMap,
@@ -201,8 +201,6 @@ const nodeTypes = {
 // --- Initial Graph Setup ---
 const initialNodes = [];
 const initialEdges = [];
-
-import { useDrag } from 'react-dnd';
 
 function PaletteItem({ func }) {
   const [{ isDragging }, drag] = useDrag({
