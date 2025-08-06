@@ -25,9 +25,10 @@ const TimingNode = ({ data }) => (
     </div>
 );
 
-const ValueAcquisitionNode = ({ id, data, onDataChange }) => {
+const ValueAcquisitionNode = ({ id, data }) => {
   const handleChange = (field) => (event) => {
-    onDataChange(id, { ...data, [field]: event.target.value });
+    // Use data.onDataChange instead of onDataChange
+    data.onDataChange(id, { ...data, [field]: event.target.value });
   };
   
   return (
@@ -65,7 +66,7 @@ const ValueAcquisitionNode = ({ id, data, onDataChange }) => {
 
 const ConsequenceNode = ({ id, data, onDataChange }) => {
   const handleChange = (field) => (event) => {
-    onDataChange(id, { ...data, [field]: event.target.value });
+    data.onDataChange(id, { ...data, [field]: event.target.value });
   };
   
   return (
@@ -117,7 +118,7 @@ const ConsequenceNode = ({ id, data, onDataChange }) => {
 
 const IfNode = ({ id, data, onDataChange }) => {
   const handleChange = (field) => (event) => {
-    onDataChange(id, { ...data, [field]: event.target.value });
+    data.onDataChange(id, { ...data, [field]: event.target.value });
   };
   
   return (
