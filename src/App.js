@@ -25,6 +25,32 @@ const TimingNode = ({ data }) => (
     </div>
 );
 
+const AssignmentNode = ({ id, data }) => {
+  const handleChange = (field) => (event) => {
+    data.onDataChange(id, { ...data, [field]: event.target.value });
+  };
+
+  return (
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
+      <strong>Assign Value</strong>
+      <div>
+        Variable:&nbsp;
+        <select value={data.variable || 'VALUE_0'} onChange={handleChange('variable')}>
+          {Array.from({ length: 10 }, (_, i) => (
+            <option key={i} value={`VALUE_${i}`}>{`VALUE_${i}`}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        Function:&nbsp;
+        <input type="text" value={data.func || ''} onChange={handleChange('func')} placeholder="e.g. mpcheck(Self)" />
+      </div>
+      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
+    </div>
+  );
+};
+
 const ValueAcquisitionNode = ({ id, data }) => {
   const handleChange = (field) => (event) => {
     // Use data.onDataChange instead of onDataChange
@@ -139,6 +165,7 @@ const nodeTypes = {
   valueAcquisitionNode: ValueAcquisitionNode,
   consequenceNode: ConsequenceNode,
   ifNode: IfNode, // Add the new IF node type
+  assignmentNode: AssignmentNode
 };
 
 // --- Initial Graph Setup ---
@@ -181,6 +208,7 @@ function Flow() {
     'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
     'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
     'Conditional': isDarkMode ? '#8a8a4a' : '#ffffb8',
+    'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8',
   }), [isDarkMode]); // Only recreate when isDarkMode changes
 
   // Define colors based on mode
@@ -218,6 +246,8 @@ function Flow() {
     { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Deals bonus damage.' },
     { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Sets encounter-persistent data.' },
     { id: 'con-if', label: 'IF', functionName: 'IF', category: 'Conditional', type: 'ifNode', nodeColor: nodeColors['Conditional'], description: 'Conditionally executes a script based on a value.' },
+    { id: 'assign-value', label: 'Assign Value',functionName: 'assign', category: 'Value Assignment', type: 'assignmentNode', nodeColor: nodeColors['Value Assignment'],description: 'Assigns the result of a function to VALUE_0~VALUE_9 for later use.',
+  }
   ];
 
   const filteredFunctions = availableFunctions.filter(func => {
