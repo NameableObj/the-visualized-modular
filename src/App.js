@@ -19,12 +19,9 @@ import './App.css'; // Your custom CSS file
 const nodeTypes = {
   timingNode: ({ data }) => (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
-      {/* Input handle for chaining from previous nodes (e.g., a logic node) */}
-      {/* For Timing nodes, the input handle might be optional or represent a condition */}
-      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} isConnectable={false} /> {/* Not connectable by default for a timing start */}
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} isConnectable={false} />
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
-      {/* Output handle for connecting to subsequent nodes */}
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
   ),
@@ -104,8 +101,7 @@ const nodeTypes = {
 };
 
 // --- Initial Graph Setup ---
-// REMOVED THE INITIAL "GlitchScript Start" NODE
-const initialNodes = []; // Start with an empty canvas
+const initialNodes = [];
 const initialEdges = [];
 
 // --- Flow Component (Main Logic for React Flow) ---
@@ -117,11 +113,15 @@ function Flow() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
-  const [isDarkMode, setIsDarkMode] = useState(true); // Start in dark mode for prototype image match
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [hoveredFunction, setHoveredFunction] = useState(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
+
+  // New state for export functionality
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [generatedScript, setGeneratedScript] = useState('');
 
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
@@ -137,10 +137,10 @@ function Flow() {
 
   // Node specific colors from the prototype image
   const nodeColors = {
-    'Timing': isDarkMode ? '#585858' : '#d0e0ff', // Greyish for dark, light blue for light
-    'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff', // Darker blue for dark, lighter blue for light
-    'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8', // Darker red for dark, lighter red for light
-    'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8', // Darker green for dark, lighter green for light
+    'Timing': isDarkMode ? '#585858' : '#d0e0ff',
+    'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
+    'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
+    'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8', // Placeholder for future Value Assignment nodes
   };
 
   // Helper function to apply current theme colors and specific node colors to node data
@@ -148,7 +148,7 @@ function Flow() {
     ...nodeData,
     textColor: textColor,
     borderColor: isDarkMode ? '#555555' : '#cccccc',
-    nodeColor: nodeColors[nodeData.category] || (isDarkMode ? '#585858' : '#d0e0ff'), // Fallback to default timing color
+    nodeColor: nodeColors[nodeData.category] || (isDarkMode ? '#585858' : '#d0e0ff'),
   }), [textColor, isDarkMode, nodeColors]);
 
   // Apply themed data to all current nodes for consistent rendering
@@ -159,7 +159,7 @@ function Flow() {
 
   // --- Draggable Function Definitions ---
   const availableFunctions = [
-    // Timings (Greyish/Light Blue)
+    // Timings
     { id: 'timing-roundstart', label: 'Round Start', functionName: 'RoundStart', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: 'Triggers at the start of each round.' },
     { id: 'timing-whenuse', label: 'When Use', functionName: 'WhenUse', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
@@ -175,7 +175,7 @@ function Flow() {
     { id: 'timing-bwh', label: 'Before When Hit', functionName: 'BWH', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: "Triggers before this unit gets hit. ('Target' becomes the unit BEING HIT, 'Self' becomes the unit who USED THE ATTACK)" },
 
-    // Value Acquisition Functions (Blue)
+    // Value Acquisition Functions
     { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
       description: 'Returns the potency, turns, or product/sum of potency and turns of a buff.\n\nArguments:\nvar_1: See Single-Target (e.g., Self, Target)\nvar_2: Buff keyword (e.g., Enhancement, Agility)\nvar_3: stack | turn | + | *' },
     { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
@@ -187,7 +187,7 @@ function Flow() {
     { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
       description: 'Generates a random integer within a specified range.\n\nArguments:\nvar_1: Minimum value\nvar_2: Maximum value' },
 
-    // Consequences (Red)
+    // Consequences
     { id: 'con-buf', label: 'Apply Buff', functionName: 'buf', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Applies a buff to the target.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: Buff keyword\nvar_3: Potency\nvar_4: Count\nvar_5: Active Round (0 for current, 1 for next)' },
     { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
@@ -245,9 +245,6 @@ function Flow() {
           type: nodeType,
           position,
           data: getThemedNodeData(functionData),
-          // Handles are now defined within the custom node components (e.g., Handle component)
-          // so we don't need sourcePosition/targetPosition here unless it's a default node.
-          // For custom nodes, handles are placed manually.
         };
 
         setNodes((nds) => nds.concat(newNode));
@@ -265,6 +262,36 @@ function Flow() {
   const handleMouseLeave = useCallback(() => {
     setHoveredFunction(null);
   }, []);
+
+  // --- Script Generation Logic (Basic Prototype) ---
+  const generateScript = useCallback(() => {
+    // This is a very basic prototype. It just lists node function names.
+    // A real implementation would traverse the graph based on connections,
+    // process arguments from node inputs, and handle control flow (IF, LOOP).
+    let script = "Modular/";
+    let timingNodeFound = false;
+
+    // Find the timing node (assuming only one for now, or the first one dropped)
+    const timingNode = nodes.find(node => node.type === 'timingNode');
+
+    if (timingNode) {
+      script += `TIMING:${timingNode.data.functionName}/`;
+      timingNodeFound = true;
+
+      // For now, just append other nodes' function names in the order they were added
+      // This is NOT how a real graph traversal works, but demonstrates output.
+      nodes.forEach(node => {
+        if (node.id !== timingNode.id) {
+          script += `${node.data.functionName}/`;
+        }
+      });
+    } else {
+      script = "Error: No Timing node found. A GlitchScript must start with a Timing node.";
+    }
+
+    setGeneratedScript(script);
+    setShowExportModal(true); // Show the modal with the generated script
+  }, [nodes]); // Depend on 'nodes' so it regenerates when nodes change
 
 
   return (
@@ -337,6 +364,25 @@ function Flow() {
             maxWidth: '350px',
           }}
         />
+
+        {/* --- EXPORT SCRIPT BUTTON --- */}
+        <button
+          onClick={generateScript}
+          style={{
+            padding: '8px 20px',
+            borderRadius: '8px',
+            border: 'none',
+            background: '#4CAF50', // Green for export
+            color: 'white',
+            cursor: 'pointer',
+            fontSize: '1em',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+            marginLeft: 'auto', // Push to the right
+          }}
+        >
+          Export Script
+        </button>
       </div>
 
       {/* --- Draggable Functions Palette --- */}
@@ -424,6 +470,87 @@ function Flow() {
           <Background variant="dots" gap={12} size={1} color={isDarkMode ? '#555' : '#aaa'} />
         </ReactFlow>
       </div>
+
+      {/* --- Export Modal/Overlay --- */}
+      {showExportModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)', // Dark overlay
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 3000, // Above everything else
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
+              padding: '25px',
+              borderRadius: '10px',
+              boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)',
+              maxWidth: '600px',
+              width: '90%',
+              color: textColor,
+              position: 'relative', // For close button positioning
+            }}
+          >
+            <h3 style={{ marginTop: 0, color: textColor }}>Generated GlitchScript</h3>
+            <textarea
+              readOnly
+              value={generatedScript}
+              style={{
+                width: '100%',
+                height: '200px',
+                padding: '10px',
+                borderRadius: '5px',
+                border: `1px solid ${isDarkMode ? '#555' : '#ccc'}`,
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#eee',
+                color: isDarkMode ? '#fff' : '#333',
+                fontFamily: 'monospace',
+                resize: 'vertical',
+              }}
+            />
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(generatedScript)
+                  .then(() => alert('Script copied to clipboard!')) // Use a better message box later
+                  .catch(err => console.error('Failed to copy: ', err));
+              }}
+              style={{
+                padding: '10px 15px',
+                borderRadius: '5px',
+                border: 'none',
+                background: '#007bff', // Blue for copy
+                color: 'white',
+                cursor: 'pointer',
+                marginTop: '15px',
+                marginRight: '10px',
+              }}
+            >
+              Copy to Clipboard
+            </button>
+            <button
+              onClick={() => setShowExportModal(false)}
+              style={{
+                padding: '10px 15px',
+                borderRadius: '5px',
+                border: 'none',
+                background: '#dc3545', // Red for close
+                color: 'white',
+                cursor: 'pointer',
+                marginTop: '15px',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
