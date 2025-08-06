@@ -446,9 +446,9 @@ continue; // Prevents further processing for this node
     
     // Start traversal from the timing node's output
     const startEdges = edgeMap.get(`${timingNode.id}-output`) || [];
-    if (startEdges.length > 0) {
-        script += traverseGraph(startEdges[0].target);
-    }
+startEdges.forEach(edge => {
+  script += traverseGraph(edge.target);
+});
 
     setGeneratedScript(script);
     setShowExportModal(true);
