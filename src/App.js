@@ -377,8 +377,13 @@ function Flow() {
   }
 
   subScript += assignedScript;
-
-  // Do NOT enqueue the output node(s) of the assignment node
+// Enqueue the output node(s) of the assignment node to allow chained assignments
+const nextEdges = edges.filter(edge => edge.source === node.id);
+nextEdges.forEach(edge => {
+  if (!visited.has(edge.target)) {
+    queue.push(edge.target);
+  }
+});
 continue; // Prevents further processing for this node
 }
     // --- END OF INSERTED BLOCK ---
