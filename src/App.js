@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useMemo } from 'react'; // Import useMemo
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -146,9 +146,6 @@ const CustomNode = ({ id, data, type, setNodes }) => {
 };
 
 // --- Node Types Mapping ---
-// This object will be passed to ReactFlow's nodeTypes prop.
-// It maps custom node type strings (e.g., 'timingNode') to their React components.
-// We are explicitly passing `setNodes` to each CustomNode instance here.
 const customNodeTypesMap = {
   timingNode: (props) => <CustomNode {...props} type="timingNode" />,
   valueAcquisitionNode: (props) => <CustomNode {...props} type="valueAcquisitionNode" />,
@@ -167,7 +164,8 @@ function Flow() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  // FIX: Add setEdges to dependency array for onConnect
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -180,31 +178,24 @@ function Flow() {
 
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
-  // Define colors based on mode
-  const backgroundColor = isDarkMode ? '#333333' : '#ffffff';
-  const textColor = isDarkMode ? '#ffffff' : '#333333';
-  const topBarBgColor = isDarkMode ? '#2a2a2a' : '#f0f0f0';
-  const topBarBorderColor = isDarkMode ? '#444444' : '#e0e0e0';
-  const buttonBgColor = isDarkMode ? '#444' : '#eee';
-  const buttonBorderColor = isDarkMode ? '#555' : '#ccc';
-  const paletteBgColor = isDarkMode ? '#222' : '#fafafa';
-  const paletteBorderColor = isDarkMode ? '#333' : '#e0e0e0';
-
-  // Node specific colors from the prototype image
-  const nodeColors = {
+  // FIX: Memoize nodeColors object so it doesn't change on every render
+  const nodeColors = useMemo(() => ({
     'Timing': isDarkMode ? '#585858' : '#d0e0ff',
     'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
     'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
     'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8',
-  };
+  }), [isDarkMode]); // Only recreate when isDarkMode changes
 
   // Helper function to apply current theme colors and specific node colors to node data
+  // FIX: Ensure dependencies are correct for useCallback
   const getThemedNodeData = useCallback((nodeData) => ({
     ...nodeData,
     textColor: textColor,
     borderColor: isDarkMode ? '#555555' : '#cccccc',
+    // FIX: Use optional chaining or fallback for nodeColors[nodeData.category]
+    // in case category is undefined for some reason, though it should be set.
     nodeColor: nodeColors[nodeData.category] || (isDarkMode ? '#585858' : '#d0e0ff'),
-  }), [textColor, isDarkMode, nodeColors]);
+  }), [textColor, isDarkMode, nodeColors]); // nodeColors is now a stable dependency
 
   // Apply themed data to all current nodes for consistent rendering
   const themedNodes = nodes.map(node => ({
@@ -567,7 +558,7 @@ function Flow() {
           onDrop={onDrop}
           onDragOver={onDragOver}
           // Pass setNodes explicitly to nodeTypes. This is the crucial part for custom nodes to update state.
-          nodeTypes={Object.keys(customNodeTypesMap).reduce((acc, key) => { // Use customNodeTypesMap here
+          nodeTypes={Object.keys(customNodeTypesMap).reduce((acc, key) => {
             acc[key] = (props) => <CustomNode {...props} type={key} setNodes={setNodes} />;
             return acc;
           }, {})}
