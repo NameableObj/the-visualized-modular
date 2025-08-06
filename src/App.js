@@ -30,6 +30,15 @@ const AssignmentNode = ({ id, data }) => {
     data.onDataChange(id, { ...data, [field]: event.target.value });
   };
 
+  // Drop handler for the value slot
+  const handleDrop = (event) => {
+    event.preventDefault();
+    const droppedNodeId = event.dataTransfer.getData('nodeId');
+    if (droppedNodeId) {
+      data.onDataChange(id, { ...data, assignedNodeId: droppedNodeId });
+    }
+  };
+
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
@@ -42,7 +51,21 @@ const AssignmentNode = ({ id, data }) => {
           ))}
         </select>
       </div>
-      {/* Removed manual function input field */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={e => e.preventDefault()}
+        style={{
+          border: '1px dashed #888',
+          padding: '8px',
+          marginTop: '8px',
+          minHeight: '32px',
+          background: data.assignedNodeId ? '#e0ffe0' : '#fff',
+          textAlign: 'center',
+          cursor: 'pointer'
+        }}
+      >
+        {data.assignedNodeId ? `Assigned: ${data.assignedNodeId}` : 'Drop a value node here'}
+      </div>
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
   );
@@ -342,49 +365,30 @@ function Flow() {
 
     // --- INSERT THIS BLOCK HERE ---
     if (node.type === 'assignmentNode') {
-  // Find the output edge (should be only one for assignment)
-  const outputEdge = edges.find(edge => edge.source === node.id);
   let assignedValue = node.data.variable || 'VALUE_0';
   let assignedScript = '';
 
-  let realTargetNode = null;
-  if (outputEdge) {
-    let candidateNode = nodeMap.get(outputEdge.target);
-    // Walk forward if the candidate is a timing node (shouldn't happen, but for safety)
-    while (candidateNode && candidateNode.type === 'timingNode') {
-      const nextEdge = edges.find(e => e.source === candidateNode.id);
-      if (!nextEdge) break;
-      candidateNode = nodeMap.get(nextEdge.target);
-    }
-    realTargetNode = candidateNode;
-  }
-
-  if (realTargetNode) {
+  // Use the assignedNodeId slot
+  const valueNode = nodeMap.get(node.data.assignedNodeId);
+  if (valueNode) {
     let funcCall = '';
     let args = [];
-    if (realTargetNode.data.functionName === 'bufcheck') {
-      args = [realTargetNode.data.target, realTargetNode.data.buff, realTargetNode.data.mode];
-    } else if (realTargetNode.data.functionName === 'getdata') {
-      args = [realTargetNode.data.target, realTargetNode.data.id];
-    } else if (realTargetNode.data.functionName === 'random') {
-      args = [realTargetNode.data.min, realTargetNode.data.max];
+    if (valueNode.data.functionName === 'bufcheck') {
+      args = [valueNode.data.target, valueNode.data.buff, valueNode.data.mode];
+    } else if (valueNode.data.functionName === 'getdata') {
+      args = [valueNode.data.target, valueNode.data.id];
+    } else if (valueNode.data.functionName === 'random') {
+      args = [valueNode.data.min, valueNode.data.max];
     }
-    // ...add other functionName cases as needed
+    // ...other cases
 
     const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-    funcCall = `${realTargetNode.data.functionName}(${formattedArgs})`;
+    funcCall = `${valueNode.data.functionName}(${formattedArgs})`;
     assignedScript = `${assignedValue}:${funcCall}/`;
   }
 
   subScript += assignedScript;
-// Enqueue the output node(s) of the assignment node to allow chained assignments
-const nextEdges = edges.filter(edge => edge.source === node.id);
-nextEdges.forEach(edge => {
-  if (!visited.has(edge.target)) {
-    queue.push(edge.target);
-  }
-});
-continue; // Prevents further processing for this node
+  continue;
 }
     // --- END OF INSERTED BLOCK ---
 
