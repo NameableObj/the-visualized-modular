@@ -342,56 +342,51 @@ function Flow() {
 
     // --- INSERT THIS BLOCK HERE ---
     if (node.type === 'assignmentNode') {
-      // Find the input edge (should be only one for assignment)
-      const inputEdge = edges.find(edge => edge.target === node.id);
-      let assignedValue = node.data.variable || 'VALUE_0';
-      let assignedScript = '';
+  // Find the output edge (should be only one for assignment)
+  const outputEdge = edges.find(edge => edge.source === node.id);
+  let assignedValue = node.data.variable || 'VALUE_0';
+  let assignedScript = '';
 
-      // --- NEW LOGIC: Walk past timing nodes to find the real source node ---
-      let realSourceNode = null;
-      if (inputEdge) {
-        let candidateNode = nodeMap.get(inputEdge.source);
-        // Walk forward if the candidate is a timing node
-        while (candidateNode && candidateNode.type === 'timingNode') {
-          // Find the next node connected to this timing node's output
-          const nextEdge = edges.find(e => e.source === candidateNode.id);
-          if (!nextEdge) break;
-          candidateNode = nodeMap.get(nextEdge.target);
-        }
-        realSourceNode = candidateNode;
-      }
-
-      if (realSourceNode && realSourceNode.type !== 'timingNode') {
-        let funcCall = '';
-let args = [];
-if (realSourceNode.data.functionName === 'bufcheck') {
-  args = [realSourceNode.data.target, realSourceNode.data.buff, realSourceNode.data.mode];
-} else if (realSourceNode.data.functionName === 'getdata') {
-  args = [realSourceNode.data.target, realSourceNode.data.id];
-} else if (realSourceNode.data.functionName === 'random') {
-  args = [realSourceNode.data.min, realSourceNode.data.max];
-}
-// ...add other functionName cases as needed
-
-const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-funcCall = `${realSourceNode.data.functionName}(${formattedArgs})`;
-assignedScript = `${assignedValue}:${funcCall}/`;
-      } else if (node.data.func) {
-        // If no input, use manual function string
-        assignedScript = `${assignedValue}:${node.data.func}/`;
-      }
-
-      subScript += assignedScript;
-
-      // Continue to next node(s)
-      const nextEdges = edgeMap.get(`${node.id}-output`) || [];
-      nextEdges.forEach(edge => {
-        if (!visited.has(edge.target)) {
-          queue.push(edge.target);
-        }
-      });
-      continue; // Prevents further processing for this node
+  let realTargetNode = null;
+  if (outputEdge) {
+    let candidateNode = nodeMap.get(outputEdge.target);
+    // Walk forward if the candidate is a timing node (shouldn't happen, but for safety)
+    while (candidateNode && candidateNode.type === 'timingNode') {
+      const nextEdge = edges.find(e => e.source === candidateNode.id);
+      if (!nextEdge) break;
+      candidateNode = nodeMap.get(nextEdge.target);
     }
+    realTargetNode = candidateNode;
+  }
+
+  if (realTargetNode) {
+    let funcCall = '';
+    let args = [];
+    if (realTargetNode.data.functionName === 'bufcheck') {
+      args = [realTargetNode.data.target, realTargetNode.data.buff, realTargetNode.data.mode];
+    } else if (realTargetNode.data.functionName === 'getdata') {
+      args = [realTargetNode.data.target, realTargetNode.data.id];
+    } else if (realTargetNode.data.functionName === 'random') {
+      args = [realTargetNode.data.min, realTargetNode.data.max];
+    }
+    // ...add other functionName cases as needed
+
+    const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+    funcCall = `${realTargetNode.data.functionName}(${formattedArgs})`;
+    assignedScript = `${assignedValue}:${funcCall}/`;
+  }
+
+  subScript += assignedScript;
+
+  // Continue to next node(s)
+  const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+  nextEdges.forEach(edge => {
+    if (!visited.has(edge.target)) {
+      queue.push(edge.target);
+    }
+  });
+  continue; // Prevents further processing for this node
+}
     // --- END OF INSERTED BLOCK ---
 
     if (node.type === 'ifNode') {
