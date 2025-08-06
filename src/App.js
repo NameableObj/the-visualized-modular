@@ -378,14 +378,8 @@ function Flow() {
 
   subScript += assignedScript;
 
-  // Continue to next node(s)
-  const nextEdges = edgeMap.get(`${node.id}-output`) || [];
-  nextEdges.forEach(edge => {
-    if (!visited.has(edge.target)) {
-      queue.push(edge.target);
-    }
-  });
-  continue; // Prevents further processing for this node
+  // Do NOT enqueue the output node(s) of the assignment node
+continue; // Prevents further processing for this node
 }
     // --- END OF INSERTED BLOCK ---
 
