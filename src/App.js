@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useMemo } from 'react'; // Import useMemo
+import React, { useCallback, useState, useRef, useMemo } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -112,7 +112,8 @@ const CustomNode = ({ id, data, type, setNodes }) => {
       case 'scale':
         return (
           <>
-            <div>Amount: <input type="text" name="var1" value={data.var1 || ''} onChange={handleChange} placeholder="Amount" /></div>
+            <TargetInput name="var1" value={data.var1} />
+            <div>Amount: <input type="text" name="var2" value={data.var2 || ''} onChange={handleChange} placeholder="Amount" /></div>
             <div>Operator: <select name="var2" value={data.var2 || 'ADD'} onChange={handleChange}><option>ADD</option><option>SUB</option><option>MUL</option></select></div>
             <div>Coin Index (opt): <input type="number" name="var3" value={data.var3 || ''} onChange={handleChange} placeholder="0-4" /></div>
           </>
@@ -145,13 +146,6 @@ const CustomNode = ({ id, data, type, setNodes }) => {
   );
 };
 
-// --- Node Types Mapping ---
-const customNodeTypesMap = {
-  timingNode: (props) => <CustomNode {...props} type="timingNode" />,
-  valueAcquisitionNode: (props) => <CustomNode {...props} type="valueAcquisitionNode" />,
-  consequenceNode: (props) => <CustomNode {...props} type="consequenceNode" />,
-};
-
 
 // --- Initial Graph Setup ---
 const initialNodes = [];
@@ -164,7 +158,6 @@ function Flow() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  // FIX: Add setEdges to dependency array for onConnect
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -186,14 +179,21 @@ function Flow() {
     'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8',
   }), [isDarkMode]); // Only recreate when isDarkMode changes
 
+  // Define colors based on mode (moved inside Flow to be in scope)
+  const backgroundColor = isDarkMode ? '#333333' : '#ffffff';
+  const textColor = isDarkMode ? '#ffffff' : '#333333';
+  const topBarBgColor = isDarkMode ? '#2a2a2a' : '#f0f0f0';
+  const topBarBorderColor = isDarkMode ? '#444444' : '#e0e0e0';
+  const buttonBgColor = isDarkMode ? '#444' : '#eee';
+  const buttonBorderColor = isDarkMode ? '#555' : '#ccc';
+  const paletteBgColor = isDarkMode ? '#222' : '#fafafa';
+  const paletteBorderColor = isDarkMode ? '#333' : '#e0e0e0';
+
   // Helper function to apply current theme colors and specific node colors to node data
-  // FIX: Ensure dependencies are correct for useCallback
   const getThemedNodeData = useCallback((nodeData) => ({
     ...nodeData,
     textColor: textColor,
     borderColor: isDarkMode ? '#555555' : '#cccccc',
-    // FIX: Use optional chaining or fallback for nodeColors[nodeData.category]
-    // in case category is undefined for some reason, though it should be set.
     nodeColor: nodeColors[nodeData.category] || (isDarkMode ? '#585858' : '#d0e0ff'),
   }), [textColor, isDarkMode, nodeColors]); // nodeColors is now a stable dependency
 
@@ -557,7 +557,7 @@ function Flow() {
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
-          // Pass setNodes explicitly to nodeTypes. This is the crucial part for custom nodes to update state.
+          // FIX: Define the nodeTypes map directly here within the Flow component's scope
           nodeTypes={Object.keys(customNodeTypesMap).reduce((acc, key) => {
             acc[key] = (props) => <CustomNode {...props} type={key} setNodes={setNodes} />;
             return acc;
