@@ -16,9 +16,7 @@ import 'reactflow/dist/style.css';
 import './App.css'; // Your custom CSS file
 
 // --- Custom Node Components ---
-// Now receives `setNodes` directly to update node data
-const CustomNode = ({ id, data, type, setNodes }) => { // Added setNodes prop
-  // FIX: Ensure handleChange correctly updates the node's data
+const CustomNode = ({ id, data, type, setNodes }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNodes((nds) =>
@@ -35,8 +33,7 @@ const CustomNode = ({ id, data, type, setNodes }) => { // Added setNodes prop
       <input
         list="target-options"
         name={name}
-        // FIX: Ensure value is always controlled, even if data.varX is undefined
-        value={value || ''}
+        value={value || ''} // Ensure value is always a string
         onChange={handleChange}
         placeholder="Self, Target, MainTarget..."
       />
@@ -129,29 +126,30 @@ const CustomNode = ({ id, data, type, setNodes }) => { // Added setNodes prop
           <TargetInput name="var1" value={data.var1} />
         );
       default:
-        return null; // No specific inputs for other nodes like timings or End Battle
+        return null;
     }
   };
 
   const isTimingNode = type === 'timingNode';
-  const hasInputHandle = !isTimingNode; // Most nodes have input handles, except timing start
-  const hasOutputHandle = true; // Most nodes have output handles
+  const hasInputHandle = !isTimingNode;
+  const hasOutputHandle = true;
 
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       {hasInputHandle && <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />}
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
-      {renderInputs()} {/* Render specific inputs based on function */}
+      {renderInputs()}
       {hasOutputHandle && <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />}
     </div>
   );
 };
 
 // --- Node Types Mapping ---
-// Pass setNodes to each custom node type
-const nodeTypes = {
-  // FIX: Pass setNodes prop explicitly to CustomNode
+// This object will be passed to ReactFlow's nodeTypes prop.
+// It maps custom node type strings (e.g., 'timingNode') to their React components.
+// We are explicitly passing `setNodes` to each CustomNode instance here.
+const customNodeTypesMap = {
   timingNode: (props) => <CustomNode {...props} type="timingNode" />,
   valueAcquisitionNode: (props) => <CustomNode {...props} type="valueAcquisitionNode" />,
   consequenceNode: (props) => <CustomNode {...props} type="consequenceNode" />,
@@ -297,11 +295,20 @@ function Flow() {
 
         const newNodeId = `${nodeType}-${Date.now()}`;
 
+        // Initialize all potential varX properties to empty strings when creating a new node
+        const initialVars = {};
+        for (let i = 1; i <= 5; i++) { // Assuming max 5 args
+            initialVars[`var${i}`] = '';
+        }
+
         const newNode = {
           id: newNodeId,
           type: nodeType,
           position,
-          data: getThemedNodeData(functionData),
+          data: {
+            ...getThemedNodeData(functionData), // Apply theme data
+            ...initialVars, // Add initialized varX properties
+          },
         };
 
         setNodes((nds) => nds.concat(newNode));
@@ -344,14 +351,11 @@ function Flow() {
     script += `TIMING:${startNode.data.functionName}/`;
 
     // 2. Traverse the graph (Breadth-First Search for simplicity)
-    // This BFS is a simplified version and doesn't handle complex branching (IF, LOOP)
-    // or ensure strict execution order based on visual layout.
-    // It processes nodes in the order they are found via connections.
     while (queue.length > 0) {
       const nodeId = queue.shift(); // Get the next node to process
       const currentNode = nodes.find(n => n.id === nodeId);
 
-      if (!currentNode || currentNode.id === startNode.id) continue; // Skip start node as it's already added
+      if (!currentNode || currentNode.id === startNode.id) continue;
 
       // Process the current node's function and arguments
       let functionString = currentNode.data.functionName;
@@ -360,6 +364,7 @@ function Flow() {
       // Collect arguments (var1, var2, etc.) from node.data
       const argNames = ['var1', 'var2', 'var3', 'var4', 'var5']; // Max 5 args for now
       for (const argName of argNames) {
+          // Only add argument if it's not empty
           if (currentNode.data[argName] !== undefined && currentNode.data[argName] !== null && currentNode.data[argName] !== '') {
               args.push(currentNode.data[argName]);
           }
@@ -561,15 +566,12 @@ function Flow() {
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
-          fitView
-          // FIX: Pass setNodes directly to nodeTypes. This is the crucial part for custom nodes to update state.
-          // React Flow's nodeTypes prop passes an object where the key is the type and value is the component.
-          // The component itself receives props like `id`, `data`, `selected`, `isConnectable`, `xPos`, `yPos`.
-          // To get `setNodes`, we need to pass it explicitly from the `Flow` component.
-          nodeTypes={Object.keys(nodeTypes).reduce((acc, key) => {
+          // Pass setNodes explicitly to nodeTypes. This is the crucial part for custom nodes to update state.
+          nodeTypes={Object.keys(customNodeTypesMap).reduce((acc, key) => { // Use customNodeTypesMap here
             acc[key] = (props) => <CustomNode {...props} type={key} setNodes={setNodes} />;
             return acc;
           }, {})}
+          fitView
           proOptions={{ hideAttribution: true }}
         >
           <MiniMap style={{ background: backgroundColor }} />
