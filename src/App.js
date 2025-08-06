@@ -1,4 +1,6 @@
 import React, { useCallback, useState, useRef, useMemo } from 'react'; // Added useMemo import
+import { DndProvider, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -30,14 +32,21 @@ const AssignmentNode = ({ id, data }) => {
     data.onDataChange(id, { ...data, [field]: event.target.value });
   };
 
-  // Drop handler for the value slot
-  const handleDrop = (event) => {
-    event.preventDefault();
-    const droppedNodeId = event.dataTransfer.getData('nodeId');
-    if (droppedNodeId) {
-      data.onDataChange(id, { ...data, assignedNodeId: droppedNodeId });
-    }
-  };
+  // DnD drop target for value node
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: 'VALUE_NODE',
+    drop: (item) => {
+      // item.func is the function data from the palette
+      // You may want to generate a new node in your graph here and assign its id
+      const newNodeId = `value-${Date.now()}`;
+      data.onDataChange(id, { ...data, assignedNodeId: newNodeId, assignedNodeData: item.func });
+      // Optionally: add the new node to your nodes state here!
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+      canDrop: !!monitor.canDrop(),
+    }),
+  });
 
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
@@ -52,19 +61,20 @@ const AssignmentNode = ({ id, data }) => {
         </select>
       </div>
       <div
-        onDrop={handleDrop}
-        onDragOver={e => e.preventDefault()}
+        ref={drop}
         style={{
           border: '1px dashed #888',
           padding: '8px',
           marginTop: '8px',
           minHeight: '32px',
-          background: data.assignedNodeId ? '#e0ffe0' : '#fff',
+          background: isOver ? '#cceeff' : data.assignedNodeId ? '#e0ffe0' : '#fff',
           textAlign: 'center',
           cursor: 'pointer'
         }}
       >
-        {data.assignedNodeId ? `Assigned: ${data.assignedNodeId}` : 'Drop a value node here'}
+        {data.assignedNodeId
+          ? `Assigned: ${data.assignedNodeData?.label || data.assignedNodeId}`
+          : 'Drop a value node here'}
       </div>
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
@@ -191,6 +201,38 @@ const nodeTypes = {
 // --- Initial Graph Setup ---
 const initialNodes = [];
 const initialEdges = [];
+
+import { useDrag } from 'react-dnd';
+
+function PaletteItem({ func }) {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'VALUE_NODE',
+    item: { func },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  });
+
+  return (
+    <div
+      ref={drag}
+      style={{
+        padding: '8px 15px',
+        borderRadius: '5px',
+        border: `1px solid ${func.nodeColor}`,
+        background: func.nodeColor,
+        color: func.textColor,
+        cursor: 'grab',
+        fontSize: '0.9em',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        whiteSpace: 'nowrap',
+        opacity: isDragging ? 0.5 : 1,
+      }}
+    >
+      {func.label} ({func.functionName})
+    </div>
+  );
+}
 
 function Flow() {
   const reactFlowWrapper = useRef(null);
@@ -518,28 +560,15 @@ startEdges.forEach(edge => {
       }}>
         <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
         {filteredFunctions.map(func => (
-          <div
-            key={func.id}
-            className="dnd-node-palette"
-            onDragStart={(event) => onDragStart(event, func.type, func)}
-            draggable
-            onMouseEnter={(event) => handleMouseEnter(event, func)}
-            onMouseLeave={handleMouseLeave}
-            style={{
-              padding: '8px 15px',
-              borderRadius: '5px',
-              border: `1px solid ${getThemedNodeData(func).borderColor}`,
-              background: getThemedNodeData(func).nodeColor,
-              color: getThemedNodeData(func).textColor,
-              cursor: 'grab',
-              fontSize: '0.9em',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {func.label} ({func.functionName})
-          </div>
-        ))}
+  <div
+    key={func.id}
+    onMouseEnter={(event) => handleMouseEnter(event, func)}
+    onMouseLeave={handleMouseLeave}
+    style={{ display: 'inline-block' }}
+  >
+    <PaletteItem func={getThemedNodeData(func)} />
+  </div>
+))}
         {hoveredFunction && (
           <div
             style={{
@@ -620,10 +649,12 @@ startEdges.forEach(edge => {
 }
 
 function App() {
-  return (
-    <ReactFlowProvider>
-      <Flow />
-    </ReactFlowProvider>
+   return (
+    <DndProvider backend={HTML5Backend}>
+      <ReactFlowProvider>
+        <Flow />
+      </ReactFlowProvider>
+    </DndProvider>
   );
 }
 
