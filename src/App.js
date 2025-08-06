@@ -6,7 +6,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   addEdge,
-  useReactFlow, // New hook for drag-and-drop positioning
+  useReactFlow,
+  ReactFlowProvider, // <--- NEW IMPORT HERE
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
@@ -14,48 +15,47 @@ import './App.css'; // Keep your custom CSS
 
 // --- Node Definitions ---
 // These define the types of nodes you can drag onto the canvas.
-// We'll expand these later.
 const nodeTypes = {
   // Timings
   timingNode: ({ data }) => (
-    <div style={{ padding: '10px', border: '1px solid #777', borderRadius: '5px', background: data.bgColor, color: data.textColor }}>
+    <div style={{ padding: '10px', border: `1px solid ${data.borderColor}`, borderRadius: '5px', background: data.bgColor, color: data.textColor }}>
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
     </div>
   ),
   // Value Acquisition
   valueAcquisitionNode: ({ data }) => (
-    <div style={{ padding: '10px', border: '1px solid #777', borderRadius: '5px', background: data.bgColor, color: data.textColor }}>
+    <div style={{ padding: '10px', border: `1px solid ${data.borderColor}`, borderRadius: '5px', background: data.bgColor, color: data.textColor }}>
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
     </div>
   ),
   // Consequences
   consequenceNode: ({ data }) => (
-    <div style={{ padding: '10px', border: '1px solid #777', borderRadius: '5px', background: data.bgColor, color: data.textColor }}>
+    <div style={{ padding: '10px', border: `1px solid ${data.borderColor}`, borderRadius: '5px', background: data.bgColor, color: data.textColor }}>
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
     </div>
   ),
 };
 
-
 // --- Initial Setup ---
 const initialNodes = [
   {
     id: '1',
     position: { x: 50, y: 150 },
-    data: { label: 'GlitchScript Start', functionName: 'Modular/TIMING:', category: 'Timing', bgColor: '#d0e0ff', textColor: '#333' },
+    data: { label: 'GlitchScript Start', functionName: 'Modular/TIMING:', category: 'Timing' },
     type: 'input',
-    style: { background: '#d0e0ff', color: '#333', border: '1px solid #aaa' },
   },
 ];
 const initialEdges = [];
 
-// --- Main App Component ---
-function App() {
-  const reactFlowWrapper = useRef(null); // Ref for the ReactFlow container
-  const { screenToFlowPosition } = useReactFlow(); // Hook to convert screen coords to flow coords
+// --- Main App Component (Now wrapped in ReactFlowProvider) ---
+// We create a wrapper component to use useReactFlow, as it must be
+// a child of ReactFlowProvider.
+function Flow() {
+  const reactFlowWrapper = useRef(null);
+  const { screenToFlowPosition } = useReactFlow(); // Now correctly used within the provider
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -63,7 +63,7 @@ function App() {
 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All'); // 'All', 'Timing', 'Value Acquisition', 'Consequence'
+  const [activeCategory, setActiveCategory] = useState('All');
 
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
@@ -79,21 +79,17 @@ function App() {
   const buttonBorderColor = isDarkMode ? '#555' : '#ccc';
 
 
-  // Apply dynamic styles to existing nodes
-  const styledNodes = nodes.map(node => ({
+  // Apply dynamic styles to nodes (both initial and new ones)
+  const getThemedNodeData = (node) => ({
+    ...node.data,
+    bgColor: nodeBgColor,
+    textColor: nodeTextColor,
+    borderColor: nodeBorderColor,
+  });
+
+  const themedNodes = nodes.map(node => ({
     ...node,
-    style: {
-      ...node.style,
-      background: nodeBgColor,
-      color: nodeTextColor,
-      borderColor: nodeBorderColor,
-    },
-    data: {
-      ...node.data,
-      bgColor: nodeBgColor, // Pass these to custom node components
-      textColor: nodeTextColor,
-      borderColor: nodeBorderColor,
-    }
+    data: getThemedNodeData(node),
   }));
 
 
@@ -124,13 +120,12 @@ function App() {
 
   // --- Drag and Drop Handlers ---
   const onDragStart = (event, nodeType, functionData) => {
-    // Store information about the dragged node
     event.dataTransfer.setData('application/reactflow', JSON.stringify({ nodeType, functionData }));
     event.dataTransfer.effectAllowed = 'move';
   };
 
   const onDragOver = useCallback((event) => {
-    event.preventDefault(); // Prevent default to allow drop
+    event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
@@ -148,31 +143,21 @@ function App() {
           y: event.clientY - reactFlowBounds.top,
         });
 
-        // Generate a unique ID for the new node
         const newNodeId = `${nodeType}-${Date.now()}`;
 
         const newNode = {
           id: newNodeId,
           type: nodeType,
           position,
-          data: {
-            label: functionData.label,
-            functionName: functionData.functionName,
-            category: functionData.category,
-            bgColor: nodeBgColor, // Apply current theme colors
-            textColor: nodeTextColor,
-            borderColor: nodeBorderColor,
-          },
-          // Add handles for connections. This is a basic setup;
-          // you'd typically define these more robustly per node type.
-          sourcePosition: 'right', // Output handle on the right
-          targetPosition: 'left',  // Input handle on the left
+          data: getThemedNodeData({ data: functionData }), // Apply theme to new node
+          sourcePosition: 'right',
+          targetPosition: 'left',
         };
 
         setNodes((nds) => nds.concat(newNode));
       }
     },
-    [screenToFlowPosition, setNodes, nodeBgColor, nodeTextColor, nodeBorderColor],
+    [screenToFlowPosition, setNodes, getThemedNodeData],
   );
 
   return (
@@ -186,7 +171,7 @@ function App() {
         display: 'flex',
         alignItems: 'center',
         gap: '15px',
-        flexShrink: 0, // Prevent it from shrinking
+        flexShrink: 0,
         color: textColor,
       }}>
         <h2 style={{ margin: 0, fontSize: '1.2em' }}>GlitchScript Editor</h2>
@@ -241,7 +226,7 @@ function App() {
             background: isDarkMode ? '#333' : '#fff',
             color: textColor,
             fontSize: '0.9em',
-            flexGrow: 1, // Allow search bar to take available space
+            flexGrow: 1,
             maxWidth: '300px',
           }}
         />
@@ -253,17 +238,17 @@ function App() {
         borderBottom: `1px solid ${topBarBorderColor}`,
         padding: '10px 20px',
         display: 'flex',
-        flexWrap: 'wrap', // Allow items to wrap
+        flexWrap: 'wrap',
         gap: '10px',
         flexShrink: 0,
         color: textColor,
-        maxHeight: '100px', // Limit height and add scroll if too many
+        maxHeight: '100px',
         overflowY: 'auto',
       }}>
         {filteredFunctions.map(func => (
           <div
             key={func.id}
-            className="dnd-node" // Custom class for styling
+            className="dnd-node"
             onDragStart={(event) => onDragStart(event, func.type, func)}
             draggable
             style={{
@@ -284,16 +269,16 @@ function App() {
 
 
       {/* --- React Flow Canvas --- */}
-      <div className="reactflow-wrapper" ref={reactFlowWrapper} style={{ flexGrow: 1 }}> {/* Takes remaining vertical space */}
+      <div className="reactflow-wrapper" ref={reactFlowWrapper} style={{ flexGrow: 1 }}>
         <ReactFlow
-          nodes={styledNodes}
+          nodes={themedNodes} // Use themedNodes here
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onDrop={onDrop} // Handle dropping nodes
-          onDragOver={onDragOver} // Allow dropping
-          nodeTypes={nodeTypes} // Register custom node types
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          nodeTypes={nodeTypes}
           fitView
         >
           <MiniMap style={{ background: backgroundColor }} />
@@ -302,6 +287,15 @@ function App() {
         </ReactFlow>
       </div>
     </div>
+  );
+}
+
+// The main App component now just wraps the Flow component with ReactFlowProvider
+function App() {
+  return (
+    <ReactFlowProvider>
+      <Flow />
+    </ReactFlowProvider>
   );
 }
 
