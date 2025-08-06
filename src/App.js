@@ -13,98 +13,137 @@ import ReactFlow, {
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
-import './App.css'; // Your custom CSS file
+import './App.css';
 
 // --- Custom Node Components ---
-const nodeTypes = {
-  timingNode: ({ data }) => (
+const TimingNode = ({ data }) => (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} isConnectable={false} />
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
-  ),
-  valueAcquisitionNode: ({ data }) => (
+);
+
+const ValueAcquisitionNode = ({ id, data, onDataChange }) => {
+  const handleChange = (field) => (event) => {
+    onDataChange(id, { ...data, [field]: event.target.value });
+  };
+  
+  return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
-      {/* Example Input Fields - these are placeholders for now */}
+      
       {data.functionName === 'bufcheck' && (
         <>
-          <div>Target: <input type="text" placeholder="Self, Target..." /></div>
-          <div>Buff: <input type="text" placeholder="Keyword" /></div>
-          <div>Mode: <select><option>stack</option><option>turn</option></select></div>
+          <div>Target: <input type="text" value={data.target || ''} onChange={handleChange('target')} placeholder="Self, Target..." /></div>
+          <div>Buff: <input type="text" value={data.buff || ''} onChange={handleChange('buff')} placeholder="Keyword" /></div>
+          <div>Mode: <select value={data.mode || 'stack'} onChange={handleChange('mode')}><option>stack</option><option>turn</option></select></div>
         </>
       )}
       {data.functionName === 'getdata' && (
         <>
-          <div>Target: <input type="text" placeholder="Self, Target..." /></div>
-          <div>ID: <input type="text" placeholder="Data ID" /></div>
+          <div>Target: <input type="text" value={data.target || ''} onChange={handleChange('target')} placeholder="Self, Target..." /></div>
+          <div>ID: <input type="text" value={data.id || ''} onChange={handleChange('id')} placeholder="Data ID" /></div>
         </>
       )}
       {data.functionName === 'unitstate' && (
-        <div>Target: <input type="text" placeholder="Self, Target..." /></div>
+        <div>Target: <input type="text" value={data.target || ''} onChange={handleChange('target')} placeholder="Self, Target..." /></div>
       )}
       {data.functionName === 'random' && (
         <>
-          <div>Min: <input type="number" placeholder="Min" /></div>
-          <div>Max: <input type="number" placeholder="Max" /></div>
+          <div>Min: <input type="number" value={data.min || ''} onChange={handleChange('min')} placeholder="Min" /></div>
+          <div>Max: <input type="number" value={data.max || ''} onChange={handleChange('max')} placeholder="Max" /></div>
         </>
       )}
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
-  ),
-  consequenceNode: ({ data }) => (
+  );
+};
+
+const ConsequenceNode = ({ id, data, onDataChange }) => {
+  const handleChange = (field) => (event) => {
+    onDataChange(id, { ...data, [field]: event.target.value });
+  };
+  
+  return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
-      {/* Example Input Fields - these are placeholders for now */}
+      
       {data.functionName === 'buf' && (
         <>
-          <div>Target: <input type="text" placeholder="Self, Target..." /></div>
-          <div>Buff: <input type="text" placeholder="Keyword" /></div>
-          <div>Potency: <input type="number" placeholder="Potency" /></div>
-          <div>Count: <input type="number" placeholder="Count" /></div>
-          <div>Active Round: <select><option>0</option><option>1</option></select></div>
+          <div>Target: <input type="text" value={data.target || ''} onChange={handleChange('target')} placeholder="Self, Target..." /></div>
+          <div>Buff: <input type="text" value={data.buff || ''} onChange={handleChange('buff')} placeholder="Keyword" /></div>
+          <div>Potency: <input type="number" value={data.potency || ''} onChange={handleChange('potency')} placeholder="Potency" /></div>
+          <div>Count: <input type="number" value={data.count || ''} onChange={handleChange('count')} placeholder="Count" /></div>
+          <div>Active Round: <select value={data.activeRound || '0'} onChange={handleChange('activeRound')}><option>0</option><option>1</option></select></div>
         </>
       )}
       {data.functionName === 'bonusdmg' && (
         <>
-          <div>Target: <input type="text" placeholder="Self, Target..." /></div>
-          <div>Amount: <input type="text" placeholder="Amount" /></div>
-          <div>Dmg Type: <select><option>-1</option><option>0</option></select></div>
-          <div>Sin Type: <select><option>0</option><option>1</option></select></div>
+          <div>Target: <input type="text" value={data.target || ''} onChange={handleChange('target')} placeholder="Self, Target..." /></div>
+          <div>Amount: <input type="text" value={data.amount || ''} onChange={handleChange('amount')} placeholder="Amount" /></div>
+          <div>Dmg Type: <select value={data.dmgType || '-1'} onChange={handleChange('dmgType')}><option>-1</option><option>0</option></select></div>
+          <div>Sin Type: <select value={data.sinType || '0'} onChange={handleChange('sinType')}><option>0</option><option>1</option></select></div>
         </>
       )}
       {data.functionName === 'setdata' && (
         <>
-          <div>Target: <input type="text" placeholder="Self, Target..." /></div>
-          <div>ID: <input type="text" placeholder="Data ID" /></div>
-          <div>Value: <input type="text" placeholder="Value" /></div>
+          <div>Target: <input type="text" value={data.target || ''} onChange={handleChange('target')} placeholder="Self, Target..." /></div>
+          <div>ID: <input type="text" value={data.id || ''} onChange={handleChange('id')} placeholder="Data ID" /></div>
+          <div>Value: <input type="text" value={data.value || ''} onChange={handleChange('value')} placeholder="Value" /></div>
         </>
       )}
       {data.functionName === 'scale' && (
         <>
-          <div>Amount: <input type="text" placeholder="Amount" /></div>
-          <div>Operator: <select><option>ADD</option><option>SUB</option></select></div>
+          <div>Amount: <input type="text" value={data.amount || ''} onChange={handleChange('amount')} placeholder="Amount" /></div>
+          <div>Operator: <select value={data.operator || 'ADD'} onChange={handleChange('operator')}><option>ADD</option><option>SUB</option></select></div>
         </>
       )}
       {data.functionName === 'dmgmult' && (
-        <div>Amount: <input type="text" placeholder="Amount" /></div>
+        <div>Amount: <input type="text" value={data.amount || ''} onChange={handleChange('amount')} placeholder="Amount" /></div>
+      )}
+      {data.functionName === 'breakrecover' && (
+        <div>Target: <input type="text" value={data.target || ''} onChange={handleChange('target')} placeholder="Self, Target..." /></div>
       )}
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
-  ),
+  );
+};
+
+const IfNode = ({ id, data, onDataChange }) => {
+  const handleChange = (field) => (event) => {
+    onDataChange(id, { ...data, [field]: event.target.value });
+  };
+  
+  return (
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
+      <strong>IF</strong>
+      <div>
+        Condition: <input type="text" value={data.condition || ''} onChange={handleChange('condition')} placeholder="VALUE_0=1" />
+      </div>
+      <Handle type="source" position={Position.Right} id="true" style={{ top: '35%', background: 'green' }} />
+      <Handle type="source" position={Position.Right} id="false" style={{ top: '65%', background: 'red' }} />
+    </div>
+  );
+};
+
+const nodeTypes = {
+  timingNode: TimingNode,
+  valueAcquisitionNode: ValueAcquisitionNode,
+  consequenceNode: ConsequenceNode,
+  ifNode: IfNode, // Add the new IF node type
 };
 
 // --- Initial Graph Setup ---
 const initialNodes = [];
 const initialEdges = [];
 
-// --- Flow Component (Main Logic for React Flow) ---
 function Flow() {
   const reactFlowWrapper = useRef(null);
   const { screenToFlowPosition } = useReactFlow();
@@ -113,13 +152,22 @@ function Flow() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
+  const onNodeDataChange = useCallback((id, newData) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: newData };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
+
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [hoveredFunction, setHoveredFunction] = useState(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
-
-  // New state for export functionality
   const [showExportModal, setShowExportModal] = useState(false);
   const [generatedScript, setGeneratedScript] = useState('');
 
@@ -140,7 +188,7 @@ function Flow() {
     'Timing': isDarkMode ? '#585858' : '#d0e0ff',
     'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
     'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
-    'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8', // Placeholder for future Value Assignment nodes
+    'Conditional': isDarkMode ? '#8a8a4a' : '#ffffb8',
   };
 
   // Helper function to apply current theme colors and specific node colors to node data
@@ -157,54 +205,18 @@ function Flow() {
     data: getThemedNodeData(node.data),
   }));
 
-  // --- Draggable Function Definitions ---
   const availableFunctions = [
-    // Timings
-    { id: 'timing-roundstart', label: 'Round Start', functionName: 'RoundStart', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
-      description: 'Triggers at the start of each round.' },
-    { id: 'timing-whenuse', label: 'When Use', functionName: 'WhenUse', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
-      description: 'Triggers when this unit uses a skill. ("Target" becomes the unit BEING HIT, "Self" becomes the unit who USED THE ATTACK)' },
-    { id: 'timing-onbreak', label: 'On Break', functionName: 'OnBreak', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
-      description: 'Triggers when this unit gets staggered. ("Target" becomes the dead unit unless LOOP is involved)' },
-    { id: 'timing-endbattle', label: 'End Battle', functionName: 'EndBattle', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
-      description: 'Triggers at the end of the combat phase.' },
-    { id: 'timing-onburst', label: 'On Burst', functionName: 'OnBurst', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
-      description: 'Triggers when a Tremor Burst occurs.' },
-    { id: 'timing-whenhit', label: 'When Hit', functionName: 'WhenHit', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
-      description: "Triggers when this unit gets hit by an attack. ('Target' becomes the unit BEING HIT, 'Self' becomes the unit who USED THE ATTACK)" },
-    { id: 'timing-bwh', label: 'Before When Hit', functionName: 'BWH', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
-      description: "Triggers before this unit gets hit. ('Target' becomes the unit BEING HIT, 'Self' becomes the unit who USED THE ATTACK)" },
-
-    // Value Acquisition Functions
-    { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
-      description: 'Returns the potency, turns, or product/sum of potency and turns of a buff.\n\nArguments:\nvar_1: See Single-Target (e.g., Self, Target)\nvar_2: Buff keyword (e.g., Enhancement, Agility)\nvar_3: stack | turn | + | *' },
-    { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
-      description: 'Retrieves encounter-persistent data from the target.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: VALUE_# | any integer (The Data ID)' },
-    { id: 'value-round', label: 'Round Number', functionName: 'round', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
-      description: 'Returns the current round number.' },
-    { id: 'value-unitstate', label: 'Unit State', functionName: 'unitstate', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
-      description: 'Returns the current state of the unit (e.g., 0 for normal, 2 for staggered).\n\nArguments:\nvar_1: See Single-Target (e.g., Self, Target)' },
-    { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
-      description: 'Generates a random integer within a specified range.\n\nArguments:\nvar_1: Minimum value\nvar_2: Maximum value' },
-
-    // Consequences
-    { id: 'con-buf', label: 'Apply Buff', functionName: 'buf', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
-      description: 'Applies a buff to the target.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: Buff keyword\nvar_3: Potency\nvar_4: Count\nvar_5: Active Round (0 for current, 1 for next)' },
-    { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
-      description: 'Deals bonus damage.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: Damage amount\nvar_3: -1 (true) | 0 (slash) | 1 (pierce) | 2 (blunt)\nvar_4: -1 (true) | 0~6 (sin types)' },
-    { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
-      description: 'Sets encounter-persistent data to the target.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: VALUE_# | any integer (The Data ID. Make this unique so it does not conflict with other mods, e.g: Skill ID + 10 or similar)\nvar_3: VALUE_# | any integer (The value to be set)' },
-    { id: 'con-endbattle', label: 'End Battle', functionName: 'endbattle', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
-      description: 'Ends the current turn\'s battle, skips to next turn.' },
-    { id: 'con-scale', label: 'Coin Power', functionName: 'scale', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
-      description: 'Gains coin power (similar to vanilla for negative coins).\n\nArguments:\nvar_1: VALUE_# | any integer (Adds or subtracts coin power)\nvar_1: ADD | SUB | MUL (Changes the operatorType of the coins)\nopt_2: any integer (Sets the index of the coin to be affected. 0 means first coin, 4 means fifth coin)' },
-    { id: 'con-dmgmult', label: 'Damage Multiplier', functionName: 'dmgmult', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
-      description: 'Gains +Damage%.\n\nArguments:\nvar_1: VALUE_# | any integer (Adds or subtracts percentage)' },
-    { id: 'con-breakrecover', label: 'Break Recover', functionName: 'breakrecover', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
-      description: 'Recovers the unit from the Staggered state.\n\nArguments:\nvar_1: See Single-Target (e.g., Self, Target)' },
+    { id: 'timing-roundstart', label: 'Round Start', functionName: 'RoundStart', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing, description: 'Triggers at the start of each round.' },
+    { id: 'timing-whenuse', label: 'When Use', functionName: 'WhenUse', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing, description: 'Triggers when this unit uses a skill.' },
+    { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Returns a buff\'s potency or turns.' },
+    { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Retrieves encounter-persistent data.' },
+    { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Generates a random integer.' },
+    { id: 'con-buf', label: 'Apply Buff', functionName: 'buf', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Applies a buff to the target.' },
+    { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Deals bonus damage.' },
+    { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Sets encounter-persistent data.' },
+    { id: 'con-if', label: 'IF', functionName: 'IF', category: 'Conditional', type: 'ifNode', nodeColor: nodeColors['Conditional'], description: 'Conditionally executes a script based on a value.' },
   ];
 
-  // Filter functions based on search term and active category
   const filteredFunctions = availableFunctions.filter(func => {
     const matchesSearch = func.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           func.functionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -213,7 +225,6 @@ function Flow() {
     return matchesSearch && matchesCategory;
   });
 
-  // --- Drag and Drop Handlers ---
   const onDragStart = (event, nodeType, functionData) => {
     event.dataTransfer.setData('application/reactflow', JSON.stringify({ nodeType, functionData }));
     event.dataTransfer.effectAllowed = 'move';
@@ -253,7 +264,6 @@ function Flow() {
     [screenToFlowPosition, setNodes, getThemedNodeData],
   );
 
-  // --- Tooltip Handlers ---
   const handleMouseEnter = useCallback((event, func) => {
     setHoveredFunction(func);
     setHoverPos({ x: event.clientX + 15, y: event.clientY + 15 });
@@ -263,36 +273,113 @@ function Flow() {
     setHoveredFunction(null);
   }, []);
 
-  // --- Script Generation Logic (Basic Prototype) ---
   const generateScript = useCallback(() => {
-    // This is a very basic prototype. It just lists node function names.
-    // A real implementation would traverse the graph based on connections,
-    // process arguments from node inputs, and handle control flow (IF, LOOP).
     let script = "Modular/";
-    let timingNodeFound = false;
+    const nodeMap = new Map(nodes.map(node => [node.id, node]));
+    const edgeMap = new Map();
+    edges.forEach(edge => {
+      const sourceKey = `${edge.source}-${edge.sourceHandle}`;
+      if (!edgeMap.has(sourceKey)) {
+        edgeMap.set(sourceKey, []);
+      }
+      edgeMap.get(sourceKey).push(edge);
+    });
 
-    // Find the timing node (assuming only one for now, or the first one dropped)
     const timingNode = nodes.find(node => node.type === 'timingNode');
+    if (!timingNode) {
+      setGeneratedScript("Error: A GlitchScript must start with a Timing node.");
+      setShowExportModal(true);
+      return;
+    }
 
-    if (timingNode) {
-      script += `TIMING:${timingNode.data.functionName}/`;
-      timingNodeFound = true;
+    script += `TIMING:${timingNode.data.functionName}/`;
 
-      // For now, just append other nodes' function names in the order they were added
-      // This is NOT how a real graph traversal works, but demonstrates output.
-      nodes.forEach(node => {
-        if (node.id !== timingNode.id) {
-          script += `${node.data.functionName}/`;
+    const generatedVariables = new Map();
+    let variableCounter = 0;
+
+    const traverseGraph = (startNodeId) => {
+      let subScript = '';
+      const visited = new Set();
+      const queue = [startNodeId];
+
+      while (queue.length > 0) {
+        const nodeId = queue.shift();
+        if (visited.has(nodeId)) continue;
+        visited.add(nodeId);
+        
+        const node = nodeMap.get(nodeId);
+        if (!node || node.type === 'timingNode') continue;
+
+        if (node.type === 'ifNode') {
+          subScript += `IF(${node.data.condition}):`;
+          
+          const trueEdges = edgeMap.get(`${node.id}-true`) || [];
+          if (trueEdges.length > 0) {
+            subScript += traverseGraph(trueEdges[0].target);
+          }
+          subScript += '/';
+        } else {
+          let functionCall = node.data.functionName;
+          let args = [];
+          if (node.data.functionName === 'bufcheck') {
+            args = [node.data.target, node.data.buff, node.data.mode];
+          } else if (node.data.functionName === 'getdata') {
+            args = [node.data.target, node.data.id];
+          } else if (node.data.functionName === 'unitstate') {
+            args = [node.data.target];
+          } else if (node.data.functionName === 'random') {
+            args = [node.data.min, node.data.max];
+            const varName = `VALUE_${variableCounter++}`;
+            generatedVariables.set(node.id, varName);
+            functionCall = `${varName}:${functionCall}`;
+          } else if (node.data.functionName === 'buf') {
+            args = [node.data.target, node.data.buff, node.data.potency, node.data.count, node.data.activeRound];
+          } else if (node.data.functionName === 'bonusdmg') {
+            args = [node.data.target, node.data.amount, node.data.dmgType, node.data.sinType];
+          } else if (node.data.functionName === 'setdata') {
+            args = [node.data.target, node.data.id, node.data.value];
+          } else if (node.data.functionName === 'scale') {
+            args = [node.data.amount, node.data.operator];
+          } else if (node.data.functionName === 'dmgmult') {
+            args = [node.data.amount];
+          } else if (node.data.functionName === 'breakrecover') {
+            args = [node.data.target];
+          }
+          
+          // Replace arguments with variable names if a connection exists
+          const inputEdges = edges.filter(edge => edge.target === node.id);
+          inputEdges.forEach(edge => {
+            const varName = generatedVariables.get(edge.source);
+            if (varName) {
+              const argIndex = ['random'].includes(node.data.functionName) ? 0 : 0; // Simplified for now
+              args[argIndex] = varName;
+            }
+          });
+
+          // Filter out undefined/null arguments
+          const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+          subScript += `${functionCall}(${formattedArgs})/`;
         }
-      });
-    } else {
-      script = "Error: No Timing node found. A GlitchScript must start with a Timing node.";
+
+        const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+        nextEdges.forEach(edge => {
+            if (!visited.has(edge.target)) {
+                queue.push(edge.target);
+            }
+        });
+      }
+      return subScript;
+    };
+    
+    // Start traversal from the timing node's output
+    const startEdges = edgeMap.get(`${timingNode.id}-output`) || [];
+    if (startEdges.length > 0) {
+        script += traverseGraph(startEdges[0].target);
     }
 
     setGeneratedScript(script);
-    setShowExportModal(true); // Show the modal with the generated script
-  }, [nodes]); // Depend on 'nodes' so it regenerates when nodes change
-
+    setShowExportModal(true);
+  }, [nodes, edges, setNodes, onNodeDataChange]);
 
   return (
     <div className={isDarkMode ? 'dark-mode' : 'light-mode'} style={{ width: '100vw', height: '100vh', backgroundColor: backgroundColor, display: 'flex', flexDirection: 'column' }}>
@@ -311,76 +398,24 @@ function Flow() {
         <h2 style={{ margin: 0, fontSize: '1.2em' }}>GlitchScript Editor</h2>
 
         {/* Dark Mode Toggle Button */}
-        <button
-          onClick={toggleDarkMode}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '5px',
-            border: `1px solid ${buttonBorderColor}`,
-            background: buttonBgColor,
-            color: textColor,
-            cursor: 'pointer',
-            fontSize: '0.9em',
-          }}
-        >
+        <button onClick={toggleDarkMode} style={{ padding: '6px 12px', borderRadius: '5px', border: `1px solid ${buttonBorderColor}`, background: buttonBgColor, color: textColor, cursor: 'pointer', fontSize: '0.9em' }}>
           {isDarkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
         </button>
 
         {/* Category Filter Buttons */}
         <div style={{ display: 'flex', gap: '5px' }}>
-          {['All', 'Timing', 'Value Acquisition', 'Consequence'].map(category => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '5px',
-                border: `1px solid ${buttonBorderColor}`,
-                background: activeCategory === category ? (isDarkMode ? '#555' : '#ddd') : buttonBgColor,
-                color: textColor,
-                cursor: 'pointer',
-                fontSize: '0.9em',
-              }}
-            >
+          {['All', 'Timing', 'Value Acquisition', 'Consequence', 'Conditional'].map(category => (
+            <button key={category} onClick={() => setActiveCategory(category)} style={{ padding: '6px 12px', borderRadius: '5px', border: `1px solid ${buttonBorderColor}`, background: activeCategory === category ? (isDarkMode ? '#555' : '#ddd') : buttonBgColor, color: textColor, cursor: 'pointer', fontSize: '0.9em' }}>
               {category}
             </button>
           ))}
         </div>
 
         {/* Search Bar */}
-        <input
-          type="text"
-          placeholder="Search functions (name or description)..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            padding: '6px 10px',
-            borderRadius: '5px',
-            border: `1px solid ${buttonBorderColor}`,
-            background: isDarkMode ? '#333' : '#fff',
-            color: textColor,
-            fontSize: '0.9em',
-            flexGrow: 1,
-            maxWidth: '350px',
-          }}
-        />
+        <input type="text" placeholder="Search functions..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ padding: '6px 10px', borderRadius: '5px', border: `1px solid ${buttonBorderColor}`, background: isDarkMode ? '#333' : '#fff', color: textColor, fontSize: '0.9em', flexGrow: 1, maxWidth: '350px' }}/>
 
         {/* --- EXPORT SCRIPT BUTTON --- */}
-        <button
-          onClick={generateScript}
-          style={{
-            padding: '8px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            background: '#4CAF50', // Green for export
-            color: 'white',
-            cursor: 'pointer',
-            fontSize: '1em',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-            marginLeft: 'auto', // Push to the right
-          }}
-        >
+        <button onClick={generateScript} style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#4CAF50', color: 'white', cursor: 'pointer', fontSize: '1em', fontWeight: 'bold', boxShadow: '0 4px 8px rgba(0,0,0,0.2)', marginLeft: 'auto' }}>
           Export Script
         </button>
       </div>
@@ -423,8 +458,6 @@ function Flow() {
             {func.label} ({func.functionName})
           </div>
         ))}
-
-        {/* --- Tooltip Display --- */}
         {hoveredFunction && (
           <div
             style={{
@@ -451,11 +484,10 @@ function Flow() {
         )}
       </div>
 
-
       {/* --- React Flow Canvas --- */}
       <div className="reactflow-wrapper" ref={reactFlowWrapper} style={{ flexGrow: 1 }}>
         <ReactFlow
-          nodes={themedNodes}
+          nodes={themedNodes.map(node => ({ ...node, data: { ...node.data, onDataChange } }))}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
@@ -474,32 +506,8 @@ function Flow() {
 
       {/* --- Export Modal/Overlay --- */}
       {showExportModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)', // Dark overlay
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 3000, // Above everything else
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
-              padding: '25px',
-              borderRadius: '10px',
-              boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)',
-              maxWidth: '600px',
-              width: '90%',
-              color: textColor,
-              position: 'relative', // For close button positioning
-            }}
-          >
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
+          <div style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', padding: '25px', borderRadius: '10px', boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)', maxWidth: '600px', width: '90%', color: textColor, position: 'relative' }}>
             <h3 style={{ marginTop: 0, color: textColor }}>Generated GlitchScript</h3>
             <textarea
               readOnly
@@ -516,49 +524,10 @@ function Flow() {
                 resize: 'vertical',
               }}
             />
-            <button
-              onClick={() => {
-                // Using a temporary textarea for copy to clipboard due to iframe restrictions
-                const textArea = document.createElement('textarea');
-                textArea.value = generatedScript;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                  document.execCommand('copy');
-                  // Use a custom message box instead of alert
-                  // For now, we'll use a simple console log
-                  console.log('Script copied to clipboard!');
-                  // You could implement a small div that appears and fades
-                } catch (err) {
-                  console.error('Failed to copy: ', err);
-                }
-                document.body.removeChild(textArea);
-              }}
-              style={{
-                padding: '10px 15px',
-                borderRadius: '5px',
-                border: 'none',
-                background: '#007bff', // Blue for copy
-                color: 'white',
-                cursor: 'pointer',
-                marginTop: '15px',
-                marginRight: '10px',
-              }}
-            >
+            <button onClick={() => { const textArea = document.createElement('textarea'); textArea.value = generatedScript; document.body.appendChild(textArea); textArea.select(); document.execCommand('copy'); document.body.removeChild(textArea); }} style={{ padding: '10px 15px', borderRadius: '5px', border: 'none', background: '#007bff', color: 'white', cursor: 'pointer', marginTop: '15px', marginRight: '10px' }}>
               Copy to Clipboard
             </button>
-            <button
-              onClick={() => setShowExportModal(false)}
-              style={{
-                padding: '10px 15px',
-                borderRadius: '5px',
-                border: 'none',
-                background: '#dc3545', // Red for close
-                color: 'white',
-                cursor: 'pointer',
-                marginTop: '15px',
-              }}
-            >
+            <button onClick={() => setShowExportModal(false)} style={{ padding: '10px 15px', borderRadius: '5px', border: 'none', background: '#dc3545', color: 'white', cursor: 'pointer', marginTop: '15px' }}>
               Close
             </button>
           </div>
@@ -568,7 +537,6 @@ function Flow() {
   );
 }
 
-// --- App Component (Root) ---
 function App() {
   return (
     <ReactFlowProvider>
