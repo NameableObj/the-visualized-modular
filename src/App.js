@@ -32,51 +32,43 @@ const AssignmentNode = ({ id, data }) => {
     data.onDataChange(id, { ...data, [field]: event.target.value });
   };
 
-  // DnD drop target for value node
-  const [{ isOver, canDrop }, drop] = useDrop({
-    accept: 'VALUE_NODE',
-    drop: (item) => {
-      // item.func is the function data from the palette
-      // You may want to generate a new node in your graph here and assign its id
-      const newNodeId = `value-${Date.now()}`;
-      data.onDataChange(id, { ...data, assignedNodeId: newNodeId, assignedNodeData: item.func });
-      // Optionally: add the new node to your nodes state here!
-    },
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-      canDrop: !!monitor.canDrop(),
-    }),
-  });
-
   return (
-    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
-      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
-      <strong>Assign Value</strong>
-      <div>
-        Variable:&nbsp;
-        <select value={data.variable || 'VALUE_0'} onChange={handleChange('variable')}>
-          {Array.from({ length: 10 }, (_, i) => (
-            <option key={i} value={`VALUE_${i}`}>{`VALUE_${i}`}</option>
-          ))}
-        </select>
-      </div>
-      <div
-        ref={drop}
-        style={{
-          border: '1px dashed #888',
-          padding: '8px',
-          marginTop: '8px',
-          minHeight: '32px',
-          background: isOver ? '#cceeff' : data.assignedNodeId ? '#e0ffe0' : '#fff',
-          textAlign: 'center',
-          cursor: 'pointer'
-        }}
-      >
-        {data.assignedNodeId
-          ? `Assigned: ${data.assignedNodeData?.label || data.assignedNodeId}`
-          : 'Drop a value node here'}
-      </div>
-      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
+    <div
+      onDrop={event => {
+        event.preventDefault();
+        const transfer = event.dataTransfer.getData('application/reactflow');
+        if (transfer) {
+          const { nodeType, functionData } = JSON.parse(transfer);
+          if (nodeType === 'valueAcquisitionNode') {
+            const newNodeId = `value-${Date.now()}`;
+            // Add the new node to the graph
+            if (data.setNodes) {
+              data.setNodes(nds => nds.concat({
+                id: newNodeId,
+                type: nodeType,
+                position: { x: 100, y: 100 }, // You can improve this position logic
+                data: { ...functionData, onDataChange: data.onDataChange }
+              }));
+            }
+            // Assign to this assignment node
+            data.onDataChange(id, { ...data, assignedNodeId: newNodeId, assignedNodeData: functionData });
+          }
+        }
+      }}
+      onDragOver={e => e.preventDefault()}
+      style={{
+        border: '1px dashed #888',
+        padding: '8px',
+        marginTop: '8px',
+        minHeight: '32px',
+        background: data.assignedNodeId ? '#e0ffe0' : '#fff',
+        textAlign: 'center',
+        cursor: 'pointer'
+      }}
+    >
+      {data.assignedNodeId
+        ? `Assigned: ${data.assignedNodeData?.label || data.assignedNodeId}`
+        : 'Drop a value node here'}
     </div>
   );
 };
@@ -201,36 +193,6 @@ const nodeTypes = {
 // --- Initial Graph Setup ---
 const initialNodes = [];
 const initialEdges = [];
-
-function PaletteItem({ func }) {
-  const [{ isDragging }, drag] = useDrag({
-    type: 'VALUE_NODE',
-    item: { func },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  });
-
-  return (
-    <div
-      ref={drag}
-      style={{
-        padding: '8px 15px',
-        borderRadius: '5px',
-        border: `1px solid ${func.nodeColor}`,
-        background: func.nodeColor,
-        color: func.textColor,
-        cursor: 'grab',
-        fontSize: '0.9em',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        whiteSpace: 'nowrap',
-        opacity: isDragging ? 0.5 : 1,
-      }}
-    >
-      {func.label} ({func.functionName})
-    </div>
-  );
-}
 
 function Flow() {
   const reactFlowWrapper = useRef(null);
@@ -560,11 +522,24 @@ startEdges.forEach(edge => {
         {filteredFunctions.map(func => (
   <div
     key={func.id}
+    className="dnd-node-palette"
+    draggable
+    onDragStart={(event) => onDragStart(event, func.type, func)}
     onMouseEnter={(event) => handleMouseEnter(event, func)}
     onMouseLeave={handleMouseLeave}
-    style={{ display: 'inline-block' }}
+    style={{
+      padding: '8px 15px',
+      borderRadius: '5px',
+      border: `1px solid ${getThemedNodeData(func).borderColor}`,
+      background: getThemedNodeData(func).nodeColor,
+      color: getThemedNodeData(func).textColor,
+      cursor: 'grab',
+      fontSize: '0.9em',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      whiteSpace: 'nowrap',
+    }}
   >
-    <PaletteItem func={getThemedNodeData(func)} />
+    {func.label} ({func.functionName})
   </div>
 ))}
         {hoveredFunction && (
@@ -596,7 +571,7 @@ startEdges.forEach(edge => {
       {/* --- React Flow Canvas --- */}
       <div className="reactflow-wrapper" ref={reactFlowWrapper} style={{ flexGrow: 1 }}>
         <ReactFlow
-          nodes={themedNodes.map(node => ({ ...node, data: { ...node.data, onDataChange: onNodeDataChange } }))}
+          nodes={themedNodes.map(node => ({ ...node, data: { ...node.data, onDataChange: onNodeDataChange, setNodes  } }))}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
