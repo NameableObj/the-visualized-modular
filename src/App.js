@@ -18,9 +18,9 @@ import './App.css'; // Your custom CSS file
 // --- Custom Node Components ---
 // Now receives `setNodes` directly to update node data
 const CustomNode = ({ id, data, type, setNodes }) => { // Added setNodes prop
+  // FIX: Ensure handleChange correctly updates the node's data
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Update the specific node's data in the main nodes state
     setNodes((nds) =>
       nds.map((node) =>
         node.id === id ? { ...node, data: { ...node.data, [name]: value } } : node
@@ -28,35 +28,36 @@ const CustomNode = ({ id, data, type, setNodes }) => { // Added setNodes prop
     );
   };
 
-  const renderInputs = () => {
-    // Reusable Target Input with Datalist
-    const TargetInput = ({ name, value }) => (
-      <div>
-        Target:
-        <input
-          list="target-options"
-          name={name}
-          value={value || ''}
-          onChange={handleChange}
-          placeholder="Self, Target, MainTarget..."
-        />
-        <datalist id="target-options">
-          <option value="Self" />
-          <option value="SelfCore" />
-          <option value="Target" />
-          <option value="TargetCore" />
-          <option value="MainTarget" />
-          <option value="EveryTarget" />
-          <option value="id#####" />
-          <option value="inst#####" />
-          <option value="adjLeft" />
-          <option value="adjRight" />
-          <option value="Enemy" /> {/* Added Enemy for consistency, though it's a multi-target option */}
-          <option value="Ally" />
-        </datalist>
-      </div>
-    );
+  // Reusable Target Input with Datalist for flexible input
+  const TargetInput = ({ name, value }) => (
+    <div>
+      Target:
+      <input
+        list="target-options"
+        name={name}
+        // FIX: Ensure value is always controlled, even if data.varX is undefined
+        value={value || ''}
+        onChange={handleChange}
+        placeholder="Self, Target, MainTarget..."
+      />
+      <datalist id="target-options">
+        <option value="Self" />
+        <option value="SelfCore" />
+        <option value="Target" />
+        <option value="TargetCore" />
+        <option value="MainTarget" />
+        <option value="EveryTarget" />
+        <option value="id#####" />
+        <option value="inst#####" />
+        <option value="adjLeft" />
+        <option value="adjRight" />
+        <option value="Enemy" />
+        <option value="Ally" />
+      </datalist>
+    </div>
+  );
 
+  const renderInputs = () => {
     switch (data.functionName) {
       case 'bufcheck':
         return (
@@ -150,6 +151,7 @@ const CustomNode = ({ id, data, type, setNodes }) => { // Added setNodes prop
 // --- Node Types Mapping ---
 // Pass setNodes to each custom node type
 const nodeTypes = {
+  // FIX: Pass setNodes prop explicitly to CustomNode
   timingNode: (props) => <CustomNode {...props} type="timingNode" />,
   valueAcquisitionNode: (props) => <CustomNode {...props} type="valueAcquisitionNode" />,
   consequenceNode: (props) => <CustomNode {...props} type="consequenceNode" />,
@@ -342,31 +344,26 @@ function Flow() {
     script += `TIMING:${startNode.data.functionName}/`;
 
     // 2. Traverse the graph (Breadth-First Search for simplicity)
+    // This BFS is a simplified version and doesn't handle complex branching (IF, LOOP)
+    // or ensure strict execution order based on visual layout.
+    // It processes nodes in the order they are found via connections.
     while (queue.length > 0) {
       const nodeId = queue.shift(); // Get the next node to process
       const currentNode = nodes.find(n => n.id === nodeId);
 
-      if (!currentNode) continue;
+      if (!currentNode || currentNode.id === startNode.id) continue; // Skip start node as it's already added
 
       // Process the current node's function and arguments
       let functionString = currentNode.data.functionName;
       const args = [];
 
       // Collect arguments (var1, var2, etc.) from node.data
-      // Ensure arguments are collected in order (var1, var2, var3, ...)
-      // and only if they are relevant for the function
       const argNames = ['var1', 'var2', 'var3', 'var4', 'var5']; // Max 5 args for now
       for (const argName of argNames) {
           if (currentNode.data[argName] !== undefined && currentNode.data[argName] !== null && currentNode.data[argName] !== '') {
               args.push(currentNode.data[argName]);
-          } else {
-              // If an argument is missing, and it's not an optional one (like var3 for scale),
-              // we might need to break or add a placeholder. For now, we'll just stop.
-              // This is a simplification; a full compiler would need argument definitions.
-              // For now, if a required arg is empty, it will just be omitted.
           }
       }
-
 
       // If it's a value acquisition node, assign it to a VALUE_X
       if (currentNode.type === 'valueAcquisitionNode') {
@@ -378,10 +375,7 @@ function Flow() {
         functionString += `(${args.join(',')})`;
       }
 
-      // Append to script if it's not the initial timing node already added
-      if (currentNode.id !== startNode.id) {
-         script += `${functionString}/`;
-      }
+      script += `${functionString}/`;
 
 
       // Find connected nodes (children)
@@ -567,11 +561,16 @@ function Flow() {
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
-          nodeTypes={nodeTypes}
           fitView
-          // Pass setNodes directly to ReactFlow, which will then pass it to CustomNode
-          // via its props. This is the fix for inputs not working.
-          proOptions={{ hideAttribution: true }} // Optional: Hides the "React Flow" attribution
+          // FIX: Pass setNodes directly to nodeTypes. This is the crucial part for custom nodes to update state.
+          // React Flow's nodeTypes prop passes an object where the key is the type and value is the component.
+          // The component itself receives props like `id`, `data`, `selected`, `isConnectable`, `xPos`, `yPos`.
+          // To get `setNodes`, we need to pass it explicitly from the `Flow` component.
+          nodeTypes={Object.keys(nodeTypes).reduce((acc, key) => {
+            acc[key] = (props) => <CustomNode {...props} type={key} setNodes={setNodes} />;
+            return acc;
+          }, {})}
+          proOptions={{ hideAttribution: true }}
         >
           <MiniMap style={{ background: backgroundColor }} />
           <Controls style={{ background: backgroundColor, color: textColor }} />
@@ -625,14 +624,12 @@ function Flow() {
             />
             <button
               onClick={() => {
-                // Using a temporary textarea for copy to clipboard due to iframe restrictions
                 const textArea = document.createElement('textarea');
                 textArea.value = generatedScript;
                 document.body.appendChild(textArea);
                 textArea.select();
                 try {
                   document.execCommand('copy');
-                  // In a real app, you'd show a small, non-blocking notification here
                   console.log('Script copied to clipboard!');
                 } catch (err) {
                   console.error('Failed to copy text: ', err);
