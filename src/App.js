@@ -7,7 +7,9 @@ import ReactFlow, {
   useEdgesState,
   addEdge,
   useReactFlow,
-  ReactFlowProvider, // Essential for React Flow hooks to work
+  ReactFlowProvider,
+  Handle, // Import Handle for custom connection points
+  Position, // Import Position for handle placement
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
@@ -15,70 +17,119 @@ import './App.css'; // Your custom CSS file
 
 // --- Custom Node Components ---
 // These components define how each type of node looks and behaves on the canvas.
+// They now include basic input fields and use dynamic coloring.
 const nodeTypes = {
   timingNode: ({ data }) => (
-    <div className="custom-node" style={{ background: data.bgColor, color: data.textColor, borderColor: data.borderColor }}>
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="source" position={Position.Right} id="a" style={{ background: data.textColor }} /> {/* Output handle */}
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
     </div>
   ),
   valueAcquisitionNode: ({ data }) => (
-    <div className="custom-node" style={{ background: data.bgColor, color: data.textColor, borderColor: data.borderColor }}>
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="source" position={Position.Right} id="a" style={{ background: data.textColor }} /> {/* Output handle */}
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
+      {/* Example Input Fields - these are placeholders for now */}
+      {data.functionName === 'bufcheck' && (
+        <>
+          <div>Target: <select><option>Self</option><option>Target</option></select></div>
+          <div>Buff: <input type="text" placeholder="Keyword" /></div>
+          <div>Mode: <select><option>stack</option><option>turn</option></select></div>
+        </>
+      )}
+      {data.functionName === 'getdata' && (
+        <>
+          <div>Target: <select><option>Self</option><option>Target</option></select></div>
+          <div>ID: <input type="text" placeholder="Data ID" /></div>
+        </>
+      )}
+      {data.functionName === 'unitstate' && (
+        <div>Target: <select><option>Self</option><option>Target</option></select></div>
+      )}
+      {data.functionName === 'random' && (
+        <>
+          <div>Min: <input type="number" placeholder="Min" /></div>
+          <div>Max: <input type="number" placeholder="Max" /></div>
+        </>
+      )}
     </div>
   ),
   consequenceNode: ({ data }) => (
-    <div className="custom-node" style={{ background: data.bgColor, color: data.textColor, borderColor: data.borderColor }}>
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="target" position={Position.Left} id="a" style={{ background: data.textColor }} /> {/* Input handle */}
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
+      {/* Example Input Fields - these are placeholders for now */}
+      {data.functionName === 'buf' && (
+        <>
+          <div>Target: <select><option>Self</option><option>Target</option></select></div>
+          <div>Buff: <input type="text" placeholder="Keyword" /></div>
+          <div>Potency: <input type="number" placeholder="Potency" /></div>
+          <div>Count: <input type="number" placeholder="Count" /></div>
+          <div>Active Round: <select><option>0</option><option>1</option></select></div>
+        </>
+      )}
+      {data.functionName === 'bonusdmg' && (
+        <>
+          <div>Target: <select><option>Self</option><option>Target</option></select></div>
+          <div>Amount: <input type="text" placeholder="Amount" /></div>
+          <div>Dmg Type: <select><option>-1</option><option>0</option></select></div>
+          <div>Sin Type: <select><option>0</option><option>1</option></select></div>
+        </>
+      )}
+      {data.functionName === 'setdata' && (
+        <>
+          <div>Target: <select><option>Self</option><option>Target</option></select></div>
+          <div>ID: <input type="text" placeholder="Data ID" /></div>
+          <div>Value: <input type="text" placeholder="Value" /></div>
+        </>
+      )}
+      {data.functionName === 'scale' && (
+        <>
+          <div>Amount: <input type="text" placeholder="Amount" /></div>
+          <div>Operator: <select><option>ADD</option><option>SUB</option></select></div>
+        </>
+      )}
+      {data.functionName === 'dmgmult' && (
+        <div>Amount: <input type="text" placeholder="Amount" /></div>
+      )}
     </div>
   ),
 };
 
 // --- Initial Graph Setup ---
-// Defines the nodes that are present when the editor first loads.
 const initialNodes = [
   {
     id: '1',
     position: { x: 50, y: 150 },
     data: { label: 'GlitchScript Start', functionName: 'Modular/TIMING:', category: 'Timing' },
-    type: 'input', // 'input' type nodes typically have only outgoing connections
+    type: 'timingNode', // Changed to custom node type
   },
 ];
-const initialEdges = []; // No connections initially
+const initialEdges = [];
 
 // --- Flow Component (Main Logic for React Flow) ---
-// This component contains the core logic for the node editor, including state management,
-// drag-and-drop handlers, and UI rendering. It must be a child of ReactFlowProvider.
 function Flow() {
-  const reactFlowWrapper = useRef(null); // Reference to the React Flow container for drag-and-drop calculations
-  const { screenToFlowPosition } = useReactFlow(); // Hook to convert screen coordinates to flow coordinates
+  const reactFlowWrapper = useRef(null);
+  const { screenToFlowPosition } = useReactFlow();
 
-  // React Flow state management for nodes and edges
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  // Callback for when a new connection is made between nodes
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
-  // UI state for dark mode, search, category filters, and hover tooltips
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Start in dark mode for prototype image match
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [hoveredFunction, setHoveredFunction] = useState(null); // Stores data of the function currently hovered
-  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 }); // Stores position for the tooltip
+  const [hoveredFunction, setHoveredFunction] = useState(null);
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
-  // Toggle dark mode state
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
-  // --- Dynamic Theming ---
-  // Define colors based on the current mode for consistent styling
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#ffffff';
+  // Define colors based on mode
+  const backgroundColor = isDarkMode ? '#333333' : '#ffffff'; // Darker grey background for canvas
   const textColor = isDarkMode ? '#ffffff' : '#333333';
-  const nodeBgColor = isDarkMode ? '#333333' : '#ffffff';
-  const nodeTextColor = isDarkMode ? '#ffffff' : '#333333';
-  const nodeBorderColor = isDarkMode ? '#555555' : '#cccccc';
   const topBarBgColor = isDarkMode ? '#2a2a2a' : '#f0f0f0';
   const topBarBorderColor = isDarkMode ? '#444444' : '#e0e0e0';
   const buttonBgColor = isDarkMode ? '#444' : '#eee';
@@ -86,13 +137,21 @@ function Flow() {
   const paletteBgColor = isDarkMode ? '#222' : '#fafafa';
   const paletteBorderColor = isDarkMode ? '#333' : '#e0e0e0';
 
-  // Helper function to apply current theme colors to node data
+  // Node specific colors from the prototype image
+  const nodeColors = {
+    'Timing': isDarkMode ? '#585858' : '#d0e0ff', // Greyish for dark, light blue for light
+    'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff', // Darker blue for dark, lighter blue for light
+    'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8', // Darker red for dark, lighter red for light
+    'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8', // Darker green for dark, lighter green for light
+  };
+
+  // Helper function to apply current theme colors and specific node colors to node data
   const getThemedNodeData = useCallback((nodeData) => ({
     ...nodeData,
-    bgColor: nodeBgColor,
-    textColor: nodeTextColor,
-    borderColor: nodeBorderColor,
-  }), [nodeBgColor, nodeTextColor, nodeBorderColor]);
+    textColor: textColor,
+    borderColor: isDarkMode ? '#555555' : '#cccccc',
+    nodeColor: nodeColors[nodeData.category] || (isDarkMode ? '#585858' : '#d0e0ff'), // Fallback to default timing color
+  }), [textColor, isDarkMode, nodeColors]);
 
   // Apply themed data to all current nodes for consistent rendering
   const themedNodes = nodes.map(node => ({
@@ -101,50 +160,50 @@ function Flow() {
   }));
 
   // --- Draggable Function Definitions ---
-  // This array holds all available GlitchScript functions with their metadata and descriptions.
+  // ADDED nodeColor PROPERTY TO EACH FUNCTION
   const availableFunctions = [
-    // Timings
-    { id: 'timing-roundstart', label: 'Round Start', functionName: 'RoundStart', category: 'Timing', type: 'timingNode',
+    // Timings (Greyish/Light Blue)
+    { id: 'timing-roundstart', label: 'Round Start', functionName: 'RoundStart', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: 'Triggers at the start of each round.' },
-    { id: 'timing-whenuse', label: 'When Use', functionName: 'WhenUse', category: 'Timing', type: 'timingNode',
+    { id: 'timing-whenuse', label: 'When Use', functionName: 'WhenUse', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: 'Triggers when this unit uses a skill. ("Target" becomes the unit BEING HIT, "Self" becomes the unit who USED THE ATTACK)' },
-    { id: 'timing-onbreak', label: 'On Break', functionName: 'OnBreak', category: 'Timing', type: 'timingNode',
+    { id: 'timing-onbreak', label: 'On Break', functionName: 'OnBreak', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: 'Triggers when this unit gets staggered. ("Target" becomes the dead unit unless LOOP is involved)' },
-    { id: 'timing-endbattle', label: 'End Battle', functionName: 'EndBattle', category: 'Timing', type: 'timingNode',
+    { id: 'timing-endbattle', label: 'End Battle', functionName: 'EndBattle', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: 'Triggers at the end of the combat phase.' },
-    { id: 'timing-onburst', label: 'On Burst', functionName: 'OnBurst', category: 'Timing', type: 'timingNode',
+    { id: 'timing-onburst', label: 'On Burst', functionName: 'OnBurst', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: 'Triggers when a Tremor Burst occurs.' },
-    { id: 'timing-whenhit', label: 'When Hit', functionName: 'WhenHit', category: 'Timing', type: 'timingNode',
+    { id: 'timing-whenhit', label: 'When Hit', functionName: 'WhenHit', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: "Triggers when this unit gets hit by an attack. ('Target' becomes the unit BEING HIT, 'Self' becomes the unit who USED THE ATTACK)" },
-    { id: 'timing-bwh', label: 'Before When Hit', functionName: 'BWH', category: 'Timing', type: 'timingNode',
+    { id: 'timing-bwh', label: 'Before When Hit', functionName: 'BWH', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
       description: "Triggers before this unit gets hit. ('Target' becomes the unit BEING HIT, 'Self' becomes the unit who USED THE ATTACK)" },
 
-    // Value Acquisition Functions
-    { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode',
+    // Value Acquisition Functions (Blue)
+    { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
       description: 'Returns the potency, turns, or product/sum of potency and turns of a buff.\n\nArguments:\nvar_1: See Single-Target (e.g., Self, Target)\nvar_2: Buff keyword (e.g., Enhancement, Agility)\nvar_3: stack | turn | + | *' },
-    { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode',
+    { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
       description: 'Retrieves encounter-persistent data from the target.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: VALUE_# | any integer (The Data ID)' },
-    { id: 'value-round', label: 'Round Number', functionName: 'round', category: 'Value Acquisition', type: 'valueAcquisitionNode',
+    { id: 'value-round', label: 'Round Number', functionName: 'round', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
       description: 'Returns the current round number.' },
-    { id: 'value-unitstate', label: 'Unit State', functionName: 'unitstate', category: 'Value Acquisition', type: 'valueAcquisitionNode',
+    { id: 'value-unitstate', label: 'Unit State', functionName: 'unitstate', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
       description: 'Returns the current state of the unit (e.g., 0 for normal, 2 for staggered).\n\nArguments:\nvar_1: See Single-Target (e.g., Self, Target)' },
-    { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode',
+    { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'],
       description: 'Generates a random integer within a specified range.\n\nArguments:\nvar_1: Minimum value\nvar_2: Maximum value' },
 
-    // Consequence Functions
-    { id: 'con-buf', label: 'Apply Buff', functionName: 'buf', category: 'Consequence', type: 'consequenceNode',
+    // Consequences (Red)
+    { id: 'con-buf', label: 'Apply Buff', functionName: 'buf', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Applies a buff to the target.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: Buff keyword\nvar_3: Potency\nvar_4: Count\nvar_5: Active Round (0 for current, 1 for next)' },
-    { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode',
+    { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Deals bonus damage.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: Damage amount\nvar_3: -1 (true) | 0 (slash) | 1 (pierce) | 2 (blunt)\nvar_4: -1 (true) | 0~6 (sin types)' },
-    { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode',
+    { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Sets encounter-persistent data to the target.\n\nArguments:\nvar_1: See Multi-Target (e.g., Self, Target)\nvar_2: VALUE_# | any integer (The Data ID. Make this unique so it does not conflict with other mods, e.g: Skill ID + 10 or similar)\nvar_3: VALUE_# | any integer (The value to be set)' },
-    { id: 'con-endbattle', label: 'End Battle', functionName: 'endbattle', category: 'Consequence', type: 'consequenceNode',
+    { id: 'con-endbattle', label: 'End Battle', functionName: 'endbattle', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Ends the current turn\'s battle, skips to next turn.' },
-    { id: 'con-scale', label: 'Coin Power', functionName: 'scale', category: 'Consequence', type: 'consequenceNode',
+    { id: 'con-scale', label: 'Coin Power', functionName: 'scale', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Gains coin power (similar to vanilla for negative coins).\n\nArguments:\nvar_1: VALUE_# | any integer (Adds or subtracts coin power)\nvar_1: ADD | SUB | MUL (Changes the operatorType of the coins)\nopt_2: any integer (Sets the index of the coin to be affected. 0 means first coin, 4 means fifth coin)' },
-    { id: 'con-dmgmult', label: 'Damage Multiplier', functionName: 'dmgmult', category: 'Consequence', type: 'consequenceNode',
+    { id: 'con-dmgmult', label: 'Damage Multiplier', functionName: 'dmgmult', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Gains +Damage%.\n\nArguments:\nvar_1: VALUE_# | any integer (Adds or subtracts percentage)' },
-    { id: 'con-breakrecover', label: 'Break Recover', functionName: 'breakrecover', category: 'Consequence', type: 'consequenceNode',
+    { id: 'con-breakrecover', label: 'Break Recover', functionName: 'breakrecover', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence,
       description: 'Recovers the unit from the Staggered state.\n\nArguments:\nvar_1: See Single-Target (e.g., Self, Target)' },
   ];
 
@@ -152,26 +211,22 @@ function Flow() {
   const filteredFunctions = availableFunctions.filter(func => {
     const matchesSearch = func.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           func.functionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (func.description && func.description.toLowerCase().includes(searchTerm.toLowerCase())); // Search in description too
+                          (func.description && func.description.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = activeCategory === 'All' || func.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
   // --- Drag and Drop Handlers ---
-  // Called when a draggable item from the palette starts being dragged
   const onDragStart = (event, nodeType, functionData) => {
-    // Store data about the dragged node in the dataTransfer object
     event.dataTransfer.setData('application/reactflow', JSON.stringify({ nodeType, functionData }));
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // Called when a draggable item is dragged over the React Flow canvas
   const onDragOver = useCallback((event) => {
-    event.preventDefault(); // Essential to allow the 'drop' event to fire
-    event.dataTransfer.dropEffect = 'move'; // Visual feedback for the user
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Called when a draggable item is dropped onto the React Flow canvas
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
@@ -181,41 +236,37 @@ function Flow() {
 
       if (transferData) {
         const { nodeType, functionData } = transferData;
-        // Convert screen coordinates of the drop to React Flow canvas coordinates
         const position = screenToFlowPosition({
           x: event.clientX - reactFlowBounds.left,
           y: event.clientY - reactFlowBounds.top,
         });
 
-        // Generate a unique ID for the new node
         const newNodeId = `${nodeType}-${Date.now()}`;
 
         const newNode = {
           id: newNodeId,
           type: nodeType,
           position,
-          data: getThemedNodeData(functionData), // Apply theme to the new node's data
-          sourcePosition: 'right', // Default output handle on the right
-          targetPosition: 'left',  // Default input handle on the left
+          data: getThemedNodeData(functionData), // Apply theme to new node
+          // Handles are now defined within the custom node components (e.g., Handle component)
+          // so we don't need sourcePosition/targetPosition here unless it's a default node.
+          // For custom nodes, handles are placed manually.
         };
 
-        setNodes((nds) => nds.concat(newNode)); // Add the new node to the React Flow state
+        setNodes((nds) => nds.concat(newNode));
       }
     },
-    [screenToFlowPosition, setNodes, getThemedNodeData], // Dependencies for useCallback
+    [screenToFlowPosition, setNodes, getThemedNodeData],
   );
 
   // --- Tooltip Handlers ---
-  // Called when the mouse enters a draggable function item in the palette
   const handleMouseEnter = useCallback((event, func) => {
-    setHoveredFunction(func); // Set the hovered function data
-    // Position tooltip slightly offset from the mouse cursor
+    setHoveredFunction(func);
     setHoverPos({ x: event.clientX + 15, y: event.clientY + 15 });
   }, []);
 
-  // Called when the mouse leaves a draggable function item
   const handleMouseLeave = useCallback(() => {
-    setHoveredFunction(null); // Hide the tooltip
+    setHoveredFunction(null);
   }, []);
 
 
@@ -230,7 +281,7 @@ function Flow() {
         display: 'flex',
         alignItems: 'center',
         gap: '15px',
-        flexShrink: 0, // Prevents this div from shrinking
+        flexShrink: 0,
         color: textColor,
       }}>
         <h2 style={{ margin: 0, fontSize: '1.2em' }}>GlitchScript Editor</h2>
@@ -285,46 +336,45 @@ function Flow() {
             background: isDarkMode ? '#333' : '#fff',
             color: textColor,
             fontSize: '0.9em',
-            flexGrow: 1, // Allows the search bar to expand
+            flexGrow: 1,
             maxWidth: '350px',
           }}
         />
       </div>
 
       {/* --- Draggable Functions Palette --- */}
-      {/* This section displays the available functions that can be dragged onto the canvas. */}
       <div style={{
         backgroundColor: paletteBgColor,
         borderBottom: `1px solid ${paletteBorderColor}`,
         padding: '10px 20px',
         display: 'flex',
-        flexWrap: 'wrap', // Allows items to wrap to the next line
+        flexWrap: 'wrap',
         gap: '10px',
         flexShrink: 0,
         color: textColor,
-        maxHeight: '120px', // Limits height and adds scrollbar if content overflows
+        maxHeight: '120px',
         overflowY: 'auto',
-        position: 'relative', // Needed for absolute positioning of the tooltip
+        position: 'relative',
       }}>
         <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
         {filteredFunctions.map(func => (
           <div
             key={func.id}
-            className="dnd-node-palette" // Custom class for styling palette items
-            onDragStart={(event) => onDragStart(event, func.type, func)} // Start drag operation
-            draggable // Make the div draggable
-            onMouseEnter={(event) => handleMouseEnter(event, func)} // Show tooltip on hover
-            onMouseLeave={handleMouseLeave} // Hide tooltip on mouse leave
+            className="dnd-node-palette"
+            onDragStart={(event) => onDragStart(event, func.type, func)}
+            draggable
+            onMouseEnter={(event) => handleMouseEnter(event, func)}
+            onMouseLeave={handleMouseLeave}
             style={{
               padding: '8px 15px',
               borderRadius: '5px',
-              border: `1px solid ${nodeBorderColor}`,
-              background: nodeBgColor,
-              color: nodeTextColor,
-              cursor: 'grab', // Indicates draggable
+              border: `1px solid ${getThemedNodeData(func).borderColor}`, // Use themed border color
+              background: getThemedNodeData(func).nodeColor, // Use themed node color
+              color: getThemedNodeData(func).textColor, // Use themed text color
+              cursor: 'grab',
               fontSize: '0.9em',
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              whiteSpace: 'nowrap', // Prevents text wrapping within the palette item
+              whiteSpace: 'nowrap',
             }}
           >
             {func.label} ({func.functionName})
@@ -332,11 +382,10 @@ function Flow() {
         ))}
 
         {/* --- Tooltip Display --- */}
-        {/* Conditionally renders the tooltip if a function is being hovered. */}
         {hoveredFunction && (
           <div
             style={{
-              position: 'fixed', // Positions relative to the viewport
+              position: 'fixed',
               left: hoverPos.x,
               top: hoverPos.y,
               backgroundColor: isDarkMode ? '#444' : '#fff',
@@ -344,12 +393,12 @@ function Flow() {
               borderRadius: '5px',
               padding: '10px',
               maxWidth: '300px',
-              zIndex: 2000, // Ensures tooltip is on top of other elements
+              zIndex: 2000,
               boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
               color: isDarkMode ? '#fff' : '#333',
               fontSize: '0.85em',
-              pointerEvents: 'none', // Allows mouse events to pass through the tooltip
-              whiteSpace: 'pre-wrap', // Preserves newlines in the description
+              pointerEvents: 'none',
+              whiteSpace: 'pre-wrap',
             }}
           >
             <strong>{hoveredFunction.label} ({hoveredFunction.functionName})</strong>
@@ -361,22 +410,21 @@ function Flow() {
 
 
       {/* --- React Flow Canvas --- */}
-      {/* This is the main interactive area where nodes are placed and connected. */}
       <div className="reactflow-wrapper" ref={reactFlowWrapper} style={{ flexGrow: 1 }}>
         <ReactFlow
-          nodes={themedNodes} // Display nodes with applied themes
+          nodes={themedNodes}
           edges={edges}
-          onNodesChange={onNodesChange} // Handle node movements, selections, deletions
-          onEdgesChange={onEdgesChange} // Handle edge additions/deletions
-          onConnect={onConnect} // Handle new connections
-          onDrop={onDrop} // Handle dropping new nodes from the palette
-          onDragOver={onDragOver} // Allow drag over the canvas
-          nodeTypes={nodeTypes} // Register custom node components
-          fitView // Automatically fits all nodes into view on load/resize
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          nodeTypes={nodeTypes}
+          fitView
         >
-          <MiniMap style={{ background: backgroundColor }} /> {/* Themed minimap */}
-          <Controls style={{ background: backgroundColor, color: textColor }} /> {/* Themed controls */}
-          <Background variant="dots" gap={12} size={1} color={isDarkMode ? '#555' : '#aaa'} /> {/* Themed background dots */}
+          <MiniMap style={{ background: backgroundColor }} />
+          <Controls style={{ background: backgroundColor, color: textColor }} />
+          <Background variant="dots" gap={12} size={1} color={isDarkMode ? '#555' : '#aaa'} />
         </ReactFlow>
       </div>
     </div>
@@ -384,8 +432,6 @@ function Flow() {
 }
 
 // --- App Component (Root) ---
-// This component simply wraps the Flow component with ReactFlowProvider.
-// ReactFlowProvider is necessary to provide the context that React Flow hooks need.
 function App() {
   return (
     <ReactFlowProvider>

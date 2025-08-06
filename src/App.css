@@ -41,22 +41,67 @@ body {
   background: #555;
 }
 
-/* Node styling adjustment for dark mode */
-.dark-mode .react-flow__node {
-  background: #333;
-  color: #fff;
-  border-color: #555;
-}
-
-/* Custom node styling for both light and dark mode */
+/* --- Custom Node Styling --- */
 .custom-node {
   padding: 10px;
   border-width: 1px;
   border-style: solid;
-  border-radius: 5px;
-  min-width: 120px; /* Ensure nodes have a minimum width */
+  border-radius: 8px; /* Slightly more rounded corners for nodes */
+  min-width: 150px; /* Increased min-width for inputs */
   text-align: center;
+  font-size: 0.9em;
+  position: relative; /* Important for Handle positioning */
+  display: flex; /* Use flexbox for internal layout */
+  flex-direction: column;
+  gap: 5px; /* Spacing between internal elements */
 }
+
+/* Styling for input fields within custom nodes */
+.custom-node input[type="text"],
+.custom-node input[type="number"],
+.custom-node select {
+  width: calc(100% - 10px); /* Adjust width to account for padding */
+  padding: 5px;
+  margin-top: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  font-size: 0.85em;
+}
+
+.dark-mode .custom-node input[type="text"],
+.dark-mode .custom-node input[type="number"],
+.dark-mode .custom-node select {
+  border-color: #666;
+  background-color: #555;
+  color: #fff;
+}
+
+/* --- React Flow Handles (Connection Ports) Styling --- */
+.react-flow__handle {
+  width: 10px; /* Size of the circular handle */
+  height: 10px;
+  background: #888; /* Default handle color */
+  border: 1px solid #555;
+  border-radius: 50%; /* Make it perfectly circular */
+}
+
+/* Style handles based on type (source/target) for clarity */
+.react-flow__handle-left {
+  left: -5px; /* Position half outside the node */
+}
+
+.react-flow__handle-right {
+  right: -5px; /* Position half outside the node */
+}
+
+/* Themed handle colors (overwritten by inline style in App.js for now) */
+/* .dark-mode .react-flow__handle {
+  background: #eee;
+  border-color: #aaa;
+} */
+
 
 /* Styling for draggable items in the palette */
 .dnd-node-palette {
