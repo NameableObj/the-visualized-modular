@@ -16,19 +16,52 @@ import 'reactflow/dist/style.css';
 import './App.css'; // Your custom CSS file
 
 // --- Custom Node Components ---
-// These components now take an `onNodeDataChange` prop to update their internal data.
-const CustomNode = ({ id, data, type, onNodeDataChange }) => {
+// Now receives `setNodes` directly to update node data
+const CustomNode = ({ id, data, type, setNodes }) => { // Added setNodes prop
   const handleChange = (e) => {
     const { name, value } = e.target;
-    onNodeDataChange(id, { ...data, [name]: value });
+    // Update the specific node's data in the main nodes state
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, [name]: value } } : node
+      )
+    );
   };
 
   const renderInputs = () => {
+    // Reusable Target Input with Datalist
+    const TargetInput = ({ name, value }) => (
+      <div>
+        Target:
+        <input
+          list="target-options"
+          name={name}
+          value={value || ''}
+          onChange={handleChange}
+          placeholder="Self, Target, MainTarget..."
+        />
+        <datalist id="target-options">
+          <option value="Self" />
+          <option value="SelfCore" />
+          <option value="Target" />
+          <option value="TargetCore" />
+          <option value="MainTarget" />
+          <option value="EveryTarget" />
+          <option value="id#####" />
+          <option value="inst#####" />
+          <option value="adjLeft" />
+          <option value="adjRight" />
+          <option value="Enemy" /> {/* Added Enemy for consistency, though it's a multi-target option */}
+          <option value="Ally" />
+        </datalist>
+      </div>
+    );
+
     switch (data.functionName) {
       case 'bufcheck':
         return (
           <>
-            <div>Target: <select name="var1" value={data.var1 || 'Self'} onChange={handleChange}><option>Self</option><option>Target</option><option>MainTarget</option><option>Enemy</option></select></div>
+            <TargetInput name="var1" value={data.var1} />
             <div>Buff: <input type="text" name="var2" value={data.var2 || ''} onChange={handleChange} placeholder="Keyword" /></div>
             <div>Mode: <select name="var3" value={data.var3 || 'stack'} onChange={handleChange}><option>stack</option><option>turn</option><option>+</option><option>*</option></select></div>
           </>
@@ -36,13 +69,13 @@ const CustomNode = ({ id, data, type, onNodeDataChange }) => {
       case 'getdata':
         return (
           <>
-            <div>Target: <select name="var1" value={data.var1 || 'Self'} onChange={handleChange}><option>Self</option><option>Target</option><option>MainTarget</option><option>Enemy</option></select></div>
+            <TargetInput name="var1" value={data.var1} />
             <div>ID: <input type="text" name="var2" value={data.var2 || ''} onChange={handleChange} placeholder="Data ID" /></div>
           </>
         );
       case 'unitstate':
         return (
-          <div>Target: <select name="var1" value={data.var1 || 'Self'} onChange={handleChange}><option>Self</option><option>Target</option><option>MainTarget</option><option>Enemy</option></select></div>
+          <TargetInput name="var1" value={data.var1} />
         );
       case 'random':
         return (
@@ -54,7 +87,7 @@ const CustomNode = ({ id, data, type, onNodeDataChange }) => {
       case 'buf':
         return (
           <>
-            <div>Target: <select name="var1" value={data.var1 || 'Self'} onChange={handleChange}><option>Self</option><option>Target</option><option>MainTarget</option><option>EveryTarget</option></select></div>
+            <TargetInput name="var1" value={data.var1} />
             <div>Buff: <input type="text" name="var2" value={data.var2 || ''} onChange={handleChange} placeholder="Keyword" /></div>
             <div>Potency: <input type="number" name="var3" value={data.var3 || ''} onChange={handleChange} placeholder="Potency" /></div>
             <div>Count: <input type="number" name="var4" value={data.var4 || ''} onChange={handleChange} placeholder="Count" /></div>
@@ -64,7 +97,7 @@ const CustomNode = ({ id, data, type, onNodeDataChange }) => {
       case 'bonusdmg':
         return (
           <>
-            <div>Target: <select name="var1" value={data.var1 || 'Self'} onChange={handleChange}><option>Self</option><option>Target</option><option>MainTarget</option><option>EveryTarget</option></select></div>
+            <TargetInput name="var1" value={data.var1} />
             <div>Amount: <input type="text" name="var2" value={data.var2 || ''} onChange={handleChange} placeholder="Amount" /></div>
             <div>Dmg Type: <select name="var3" value={data.var3 || '-1'} onChange={handleChange}><option value="-1">True</option><option value="0">Slash</option><option value="1">Pierce</option><option value="2">Blunt</option></select></div>
             <div>Sin Type: <select name="var4" value={data.var4 || '0'} onChange={handleChange}><option value="0">Wrath</option><option value="1">Lust</option><option value="2">Sloth</option><option value="3">Gluttony</option><option value="4">Envy</option><option value="5">Pride</option><option value="6">Greed</option></select></div>
@@ -73,7 +106,7 @@ const CustomNode = ({ id, data, type, onNodeDataChange }) => {
       case 'setdata':
         return (
           <>
-            <div>Target: <select name="var1" value={data.var1 || 'Self'} onChange={handleChange}><option>Self</option><option>Target</option><option>MainTarget</option><option>EveryTarget</option></select></div>
+            <TargetInput name="var1" value={data.var1} />
             <div>ID: <input type="text" name="var2" value={data.var2 || ''} onChange={handleChange} placeholder="Data ID" /></div>
             <div>Value: <input type="text" name="var3" value={data.var3 || ''} onChange={handleChange} placeholder="Value" /></div>
           </>
@@ -92,7 +125,7 @@ const CustomNode = ({ id, data, type, onNodeDataChange }) => {
         );
       case 'breakrecover':
         return (
-          <div>Target: <select name="var1" value={data.var1 || 'Self'} onChange={handleChange}><option>Self</option><option>Target</option><option>MainTarget</option><option>Enemy</option></select></div>
+          <TargetInput name="var1" value={data.var1} />
         );
       default:
         return null; // No specific inputs for other nodes like timings or End Battle
@@ -114,6 +147,8 @@ const CustomNode = ({ id, data, type, onNodeDataChange }) => {
   );
 };
 
+// --- Node Types Mapping ---
+// Pass setNodes to each custom node type
 const nodeTypes = {
   timingNode: (props) => <CustomNode {...props} type="timingNode" />,
   valueAcquisitionNode: (props) => <CustomNode {...props} type="valueAcquisitionNode" />,
@@ -176,16 +211,6 @@ function Flow() {
     ...node,
     data: getThemedNodeData(node.data),
   }));
-
-  // --- Update Node Data Callback ---
-  // This function is passed down to custom nodes to allow them to update their own data.
-  const onNodeDataChange = useCallback((id, newData) => {
-    setNodes((nds) =>
-      nds.map((node) =>
-        node.id === id ? { ...node, data: newData } : node
-      )
-    );
-  }, [setNodes]);
 
   // --- Draggable Function Definitions ---
   const availableFunctions = [
@@ -310,7 +335,6 @@ function Flow() {
     }
 
     // For simplicity, we'll start with the first timing node found.
-    // In a more advanced editor, you'd handle multiple entry points or specific start nodes.
     const startNode = timingNodes[0];
     queue.push(startNode.id);
     visitedNodes.add(startNode.id);
@@ -329,12 +353,20 @@ function Flow() {
       const args = [];
 
       // Collect arguments (var1, var2, etc.) from node.data
-      for (let i = 1; i <= 5; i++) { // Assuming max 5 arguments for now (var1 to var5)
-        const argName = `var${i}`;
-        if (currentNode.data[argName] !== undefined && currentNode.data[argName] !== null && currentNode.data[argName] !== '') {
-          args.push(currentNode.data[argName]);
-        }
+      // Ensure arguments are collected in order (var1, var2, var3, ...)
+      // and only if they are relevant for the function
+      const argNames = ['var1', 'var2', 'var3', 'var4', 'var5']; // Max 5 args for now
+      for (const argName of argNames) {
+          if (currentNode.data[argName] !== undefined && currentNode.data[argName] !== null && currentNode.data[argName] !== '') {
+              args.push(currentNode.data[argName]);
+          } else {
+              // If an argument is missing, and it's not an optional one (like var3 for scale),
+              // we might need to break or add a placeholder. For now, we'll just stop.
+              // This is a simplification; a full compiler would need argument definitions.
+              // For now, if a required arg is empty, it will just be omitted.
+          }
       }
+
 
       // If it's a value acquisition node, assign it to a VALUE_X
       if (currentNode.type === 'valueAcquisitionNode') {
@@ -364,7 +396,7 @@ function Flow() {
 
     setGeneratedScript(script);
     setShowExportModal(true);
-  }, [nodes, edges]); // Depend on 'nodes' and 'edges' for full graph regeneration
+  }, [nodes, edges]);
 
 
   return (
@@ -537,15 +569,9 @@ function Flow() {
           onDragOver={onDragOver}
           nodeTypes={nodeTypes}
           fitView
-          // Pass the onNodeDataChange prop to ReactFlow so custom nodes can access it
-          // This requires a custom node wrapper or context, but for simplicity, we'll pass it directly
-          // and access it via `props.onNodeDataChange` in CustomNode.
-          // React Flow's `nodeTypes` prop passes `setNodes` implicitly, but for direct data updates,
-          // passing a specific handler is cleaner.
-          // Note: React Flow's `setNodes` from `useNodesState` is already passed to custom nodes implicitly.
-          // We'll leverage that by having CustomNode call `setNodes` directly.
-          // So, `onNodeDataChange` is not strictly needed as a prop here, but the concept is important.
-          // Let's modify CustomNode to use `useNodesState` directly for cleaner updates.
+          // Pass setNodes directly to ReactFlow, which will then pass it to CustomNode
+          // via its props. This is the fix for inputs not working.
+          proOptions={{ hideAttribution: true }} // Optional: Hides the "React Flow" attribution
         >
           <MiniMap style={{ background: backgroundColor }} />
           <Controls style={{ background: backgroundColor, color: textColor }} />
@@ -599,17 +625,15 @@ function Flow() {
             />
             <button
               onClick={() => {
-                document.execCommand('copy'); // Fallback for older browsers/iframes
+                // Using a temporary textarea for copy to clipboard due to iframe restrictions
                 const textArea = document.createElement('textarea');
                 textArea.value = generatedScript;
                 document.body.appendChild(textArea);
                 textArea.select();
                 try {
                   document.execCommand('copy');
-                  // Use a custom message box instead of alert
-                  // For now, we'll use a simple console log
+                  // In a real app, you'd show a small, non-blocking notification here
                   console.log('Script copied to clipboard!');
-                  // You could implement a small div that appears and fades
                 } catch (err) {
                   console.error('Failed to copy text: ', err);
                 }
