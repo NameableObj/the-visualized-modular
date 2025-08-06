@@ -340,6 +340,39 @@ function Flow() {
         if (visited.has(nodeId)) continue;
         visited.add(nodeId);
         
+                if (node.type === 'assignmentNode') {
+          // Find the input edge (should be only one for assignment)
+          const inputEdge = edges.find(edge => edge.target === node.id);
+          let assignedValue = node.data.variable || 'VALUE_0';
+          let assignedScript = '';
+        
+          if (inputEdge) {
+            const sourceNode = nodeMap.get(inputEdge.source);
+            if (sourceNode) {
+              // Generate the function call for the source node
+              let funcCall = '';
+              let args = [];
+              if (sourceNode.data.functionName === 'bufcheck') {
+                args = [sourceNode.data.target, sourceNode.data.buff, sourceNode.data.mode];
+              } else if (sourceNode.data.functionName === 'getdata') {
+                args = [sourceNode.data.target, sourceNode.data.id];
+              } else if (sourceNode.data.functionName === 'random') {
+                args = [sourceNode.data.min, sourceNode.data.max];
+              }
+              // ...add other functionName cases as needed
+        
+              const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+              funcCall = `${sourceNode.data.functionName}(${formattedArgs})`;
+              assignedScript = `${assignedValue}:${funcCall}/`;
+            }
+          } else if (node.data.func) {
+            // If no input, use manual function string
+            assignedScript = `${assignedValue}:${node.data.func}/`;
+          }
+        
+          subScript += assignedScript;
+        }
+
         const node = nodeMap.get(nodeId);
         if (!node || node.type === 'timingNode') continue;
 
