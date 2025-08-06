@@ -445,11 +445,9 @@ continue; // Prevents further processing for this node
 };
     
     // Start traversal from the timing node's output
-    const nextEdges = edges.filter(edge => edge.source === node.id);
-nextEdges.forEach(edge => {
-  if (!visited.has(edge.target)) {
-    queue.push(edge.target);
-  }
+    const startEdges = edges.filter(edge => edge.source === timingNode.id);
+startEdges.forEach(edge => {
+  script += traverseGraph(edge.target);
 });
 
     setGeneratedScript(script);
