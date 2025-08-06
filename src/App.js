@@ -489,7 +489,7 @@ function Flow() {
       {/* --- React Flow Canvas --- */}
       <div className="reactflow-wrapper" ref={reactFlowWrapper} style={{ flexGrow: 1 }}>
         <ReactFlow
-          nodes={themedNodes.map(node => ({ ...node, data: { ...node.data, onDataChange } }))}
+          nodes={themedNodes.map(node => ({ ...node, data: { ...node.data, onDataChange: onNodeDataChange } }))}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
