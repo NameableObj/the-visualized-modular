@@ -8,27 +8,29 @@ import ReactFlow, {
   addEdge,
   useReactFlow,
   ReactFlowProvider,
-  Handle, // Import Handle for custom connection points
-  Position, // Import Position for handle placement
+  Handle,
+  Position,
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
 import './App.css'; // Your custom CSS file
 
 // --- Custom Node Components ---
-// These components define how each type of node looks and behaves on the canvas.
-// They now include basic input fields and use dynamic coloring.
 const nodeTypes = {
   timingNode: ({ data }) => (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
-      <Handle type="source" position={Position.Right} id="a" style={{ background: data.textColor }} /> {/* Output handle */}
+      {/* Input handle for chaining from previous nodes (e.g., a logic node) */}
+      {/* For Timing nodes, the input handle might be optional or represent a condition */}
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} isConnectable={false} /> {/* Not connectable by default for a timing start */}
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
+      {/* Output handle for connecting to subsequent nodes */}
+      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
   ),
   valueAcquisitionNode: ({ data }) => (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
-      <Handle type="source" position={Position.Right} id="a" style={{ background: data.textColor }} /> {/* Output handle */}
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
       {/* Example Input Fields - these are placeholders for now */}
@@ -54,11 +56,12 @@ const nodeTypes = {
           <div>Max: <input type="number" placeholder="Max" /></div>
         </>
       )}
+      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
   ),
   consequenceNode: ({ data }) => (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
-      <Handle type="target" position={Position.Left} id="a" style={{ background: data.textColor }} /> {/* Input handle */}
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
       {/* Example Input Fields - these are placeholders for now */}
@@ -95,19 +98,14 @@ const nodeTypes = {
       {data.functionName === 'dmgmult' && (
         <div>Amount: <input type="text" placeholder="Amount" /></div>
       )}
+      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
   ),
 };
 
 // --- Initial Graph Setup ---
-const initialNodes = [
-  {
-    id: '1',
-    position: { x: 50, y: 150 },
-    data: { label: 'GlitchScript Start', functionName: 'Modular/TIMING:', category: 'Timing' },
-    type: 'timingNode', // Changed to custom node type
-  },
-];
+// REMOVED THE INITIAL "GlitchScript Start" NODE
+const initialNodes = []; // Start with an empty canvas
 const initialEdges = [];
 
 // --- Flow Component (Main Logic for React Flow) ---
@@ -128,7 +126,7 @@ function Flow() {
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
   // Define colors based on mode
-  const backgroundColor = isDarkMode ? '#333333' : '#ffffff'; // Darker grey background for canvas
+  const backgroundColor = isDarkMode ? '#333333' : '#ffffff';
   const textColor = isDarkMode ? '#ffffff' : '#333333';
   const topBarBgColor = isDarkMode ? '#2a2a2a' : '#f0f0f0';
   const topBarBorderColor = isDarkMode ? '#444444' : '#e0e0e0';
@@ -160,7 +158,6 @@ function Flow() {
   }));
 
   // --- Draggable Function Definitions ---
-  // ADDED nodeColor PROPERTY TO EACH FUNCTION
   const availableFunctions = [
     // Timings (Greyish/Light Blue)
     { id: 'timing-roundstart', label: 'Round Start', functionName: 'RoundStart', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing,
@@ -247,7 +244,7 @@ function Flow() {
           id: newNodeId,
           type: nodeType,
           position,
-          data: getThemedNodeData(functionData), // Apply theme to new node
+          data: getThemedNodeData(functionData),
           // Handles are now defined within the custom node components (e.g., Handle component)
           // so we don't need sourcePosition/targetPosition here unless it's a default node.
           // For custom nodes, handles are placed manually.
@@ -368,9 +365,9 @@ function Flow() {
             style={{
               padding: '8px 15px',
               borderRadius: '5px',
-              border: `1px solid ${getThemedNodeData(func).borderColor}`, // Use themed border color
-              background: getThemedNodeData(func).nodeColor, // Use themed node color
-              color: getThemedNodeData(func).textColor, // Use themed text color
+              border: `1px solid ${getThemedNodeData(func).borderColor}`,
+              background: getThemedNodeData(func).nodeColor,
+              color: getThemedNodeData(func).textColor,
               cursor: 'grab',
               fontSize: '0.9em',
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',

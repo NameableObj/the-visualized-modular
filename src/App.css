@@ -96,13 +96,6 @@ body {
   right: -5px; /* Position half outside the node */
 }
 
-/* Themed handle colors (overwritten by inline style in App.js for now) */
-/* .dark-mode .react-flow__handle {
-  background: #eee;
-  border-color: #aaa;
-} */
-
-
 /* Styling for draggable items in the palette */
 .dnd-node-palette {
   transition: transform 0.1s ease-in-out; /* Smooth transition for grab effect */
