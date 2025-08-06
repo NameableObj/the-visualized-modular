@@ -340,7 +340,7 @@ function Flow() {
 
     const timingNode = nodes.find(node => node.type === 'timingNode');
     if (!timingNode) {
-      setGeneratedScript("Error: A GlitchScript must start with a Timing node.");
+      setGeneratedScript("Needs to start with a timing node goober");
       setShowExportModal(true);
       return;
     }
@@ -590,7 +590,7 @@ startEdges.forEach(edge => {
       {showExportModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
           <div style={{ backgroundColor: isDarkMode ? '#2a2a2a' : '#fff', padding: '25px', borderRadius: '10px', boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)', maxWidth: '600px', width: '90%', color: textColor, position: 'relative' }}>
-            <h3 style={{ marginTop: 0, color: textColor }}>Generated GlitchScript</h3>
+            <h3 style={{ marginTop: 0, color: textColor }}>Generated Modular Moment</h3>
             <textarea
               readOnly
               value={generatedScript}
