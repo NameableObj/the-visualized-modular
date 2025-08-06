@@ -398,7 +398,7 @@ function Flow() {
         flexShrink: 0,
         color: textColor,
       }}>
-        <h2 style={{ margin: 0, fontSize: '1.2em' }}>GlitchScript Editor</h2>
+        <h2 style={{ margin: 0, fontSize: '1.2em' }}>Modular Visualized</h2>
 
         {/* Dark Mode Toggle Button */}
         <button onClick={toggleDarkMode} style={{ padding: '6px 12px', borderRadius: '5px', border: `1px solid ${buttonBorderColor}`, background: buttonBgColor, color: textColor, cursor: 'pointer', fontSize: '0.9em' }}>
