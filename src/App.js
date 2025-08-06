@@ -32,6 +32,51 @@ const AssignmentNode = ({ id, data }) => {
     data.onDataChange(id, { ...data, [field]: event.target.value });
   };
 
+  // Render the embedded value node
+  const renderEmbeddedNode = () => {
+    if (!data.assignedNodeData) return null;
+
+    return (
+      <div style={{
+        padding: '8px',
+        background: data.assignedNodeData.nodeColor,
+        borderRadius: '3px',
+        margin: '4px 0'
+      }}>
+        <strong>{data.assignedNodeData.label}</strong>
+        {data.assignedNodeData.functionName === 'bufcheck' && (
+          <>
+            <div>Target: <input type="text" value={data.assignedNodeData.target || ''} 
+              onChange={e => data.onDataChange(id, { 
+                ...data, 
+                assignedNodeData: { ...data.assignedNodeData, target: e.target.value }
+              })} 
+              placeholder="Self, Target..." />
+            </div>
+            <div>Buff: <input type="text" value={data.assignedNodeData.buff || ''} 
+              onChange={e => data.onDataChange(id, {
+                ...data,
+                assignedNodeData: { ...data.assignedNodeData, buff: e.target.value }
+              })}
+              placeholder="Keyword" />
+            </div>
+            <div>Mode: 
+              <select value={data.assignedNodeData.mode || 'stack'}
+                onChange={e => data.onDataChange(id, {
+                  ...data,
+                  assignedNodeData: { ...data.assignedNodeData, mode: e.target.value }
+                })}>
+                <option>stack</option>
+                <option>turn</option>
+              </select>
+            </div>
+          </>
+        )}
+        {/* Add similar blocks for other function types */}
+      </div>
+    );
+  };
+
   return (
     <div className="custom-node" style={{ 
       background: data.nodeColor, 
@@ -42,23 +87,12 @@ const AssignmentNode = ({ id, data }) => {
       minWidth: '200px'
     }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
-      
-      {/* Node Header */}
       <strong>Assign Value</strong>
       
-      {/* Value Selector */}
       <div style={{ margin: '10px 0' }}>
         <label>
           Variable:&nbsp;
-          <select 
-            value={data.variable || 'VALUE_0'} 
-            onChange={handleChange('variable')}
-            style={{
-              padding: '4px',
-              borderRadius: '3px',
-              border: '1px solid #ccc'
-            }}
-          >
+          <select value={data.variable || 'VALUE_0'} onChange={handleChange('variable')}>
             {Array.from({ length: 10 }, (_, i) => (
               <option key={i} value={`VALUE_${i}`}>{`VALUE_${i}`}</option>
             ))}
@@ -66,7 +100,6 @@ const AssignmentNode = ({ id, data }) => {
         </label>
       </div>
 
-      {/* Slot for Value Node */}
       <div
         onDrop={event => {
           event.preventDefault();
@@ -74,27 +107,9 @@ const AssignmentNode = ({ id, data }) => {
           if (transfer) {
             const { nodeType, functionData } = JSON.parse(transfer);
             if (nodeType === 'valueAcquisitionNode') {
-              const newNodeId = `value-${Date.now()}`;
-              // Add the node to graph but position it near this assignment node
-              if (data.setNodes) {
-                data.setNodes(nds => {
-                  const thisNode = nds.find(n => n.id === id);
-                  return nds.concat({
-                    id: newNodeId,
-                    type: nodeType,
-                    // Position slightly below the assignment node
-                    position: {
-                      x: thisNode.position.x,
-                      y: thisNode.position.y + 150
-                    },
-                    data: { ...functionData, onDataChange: data.onDataChange }
-                  });
-                });
-              }
-              // Update assignment node with reference to the value node
+              // Just store the function data, don't create a new node
               data.onDataChange(id, { 
                 ...data, 
-                assignedNodeId: newNodeId, 
                 assignedNodeData: functionData 
               });
             }
@@ -106,17 +121,11 @@ const AssignmentNode = ({ id, data }) => {
           padding: '10px',
           margin: '10px 0',
           borderRadius: '5px',
-          background: data.assignedNodeId ? '#e0ffe0' : 'rgba(0,0,0,0.05)',
-          textAlign: 'center',
+          background: data.assignedNodeData ? '#e0ffe0' : 'rgba(0,0,0,0.05)',
           minHeight: '50px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
         }}
       >
-        {data.assignedNodeId 
-          ? `Using: ${data.assignedNodeData?.label || 'Unknown Function'}`
-          : 'Drop a value node here'}
+        {data.assignedNodeData ? renderEmbeddedNode() : 'Drop a value node here'}
       </div>
 
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
