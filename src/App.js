@@ -437,11 +437,11 @@ function Flow() {
 
         {/* Category Filter Buttons */}
         <div style={{ display: 'flex', gap: '5px' }}>
-          {['All', 'Timing', 'Value Acquisition', 'Consequence', 'Conditional'].map(category => (
-            <button key={category} onClick={() => setActiveCategory(category)} style={{ padding: '6px 12px', borderRadius: '5px', border: `1px solid ${buttonBorderColor}`, background: activeCategory === category ? (isDarkMode ? '#555' : '#ddd') : buttonBgColor, color: textColor, cursor: 'pointer', fontSize: '0.9em' }}>
-              {category}
-            </button>
-          ))}
+           {['All', 'Timing', 'Value Acquisition', 'Consequence', 'Conditional', 'Value Assignment'].map(category => (
+           <button key={category} onClick={() => setActiveCategory(category)} style={{ padding: '6px 12px', borderRadius: '5px', border: `1px solid ${buttonBorderColor}`, background: activeCategory === category ? (isDarkMode ? '#555' : '#ddd') : buttonBgColor, color: textColor, cursor: 'pointer', fontSize: '0.9em' }}>
+               {category}
+           </button>
+         ))}
         </div>
 
         {/* Search Bar */}
