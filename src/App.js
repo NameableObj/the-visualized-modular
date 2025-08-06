@@ -101,21 +101,25 @@ const AssignmentNode = ({ id, data }) => {
       </div>
 
       <div
-        onDrop={event => {
-          event.preventDefault();
-          const transfer = event.dataTransfer.getData('application/reactflow');
-          if (transfer) {
-            const { nodeType, functionData } = JSON.parse(transfer);
-            if (nodeType === 'valueAcquisitionNode') {
-              // Just store the function data, don't create a new node
-              data.onDataChange(id, { 
-                ...data, 
-                assignedNodeData: functionData 
-              });
-            }
-          }
-        }}
-        onDragOver={e => e.preventDefault()}
+      className="assignment-slot"
+  onDrop={event => {
+    event.preventDefault();
+    event.stopPropagation(); // Stop event from reaching the canvas
+    const transfer = event.dataTransfer.getData('application/reactflow');
+    if (transfer) {
+      const { nodeType, functionData } = JSON.parse(transfer);
+      if (nodeType === 'valueAcquisitionNode') {
+        data.onDataChange(id, { 
+          ...data, 
+          assignedNodeData: functionData 
+        });
+      }
+    }
+  }}
+  onDragOver={e => {
+    e.preventDefault();
+    e.stopPropagation(); // Stop event from reaching the canvas
+  }}
         style={{
           border: '2px dashed #888',
           padding: '10px',
@@ -354,6 +358,10 @@ function Flow() {
     (event) => {
       event.preventDefault();
 
+      if (event.target.closest('.assignment-slot')) {
+      return;
+    }
+
       const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
       const transferData = JSON.parse(event.dataTransfer.getData('application/reactflow'));
 
@@ -430,22 +438,32 @@ function Flow() {
   let assignedValue = node.data.variable || 'VALUE_0';
   let assignedScript = '';
 
-  // Use the assignedNodeId slot
-  const valueNode = nodeMap.get(node.data.assignedNodeId);
-  if (valueNode) {
+  // Use the embedded node data directly
+  if (node.data.assignedNodeData) {
     let funcCall = '';
     let args = [];
-    if (valueNode.data.functionName === 'bufcheck') {
-      args = [valueNode.data.target, valueNode.data.buff, valueNode.data.mode];
-    } else if (valueNode.data.functionName === 'getdata') {
-      args = [valueNode.data.target, valueNode.data.id];
-    } else if (valueNode.data.functionName === 'random') {
-      args = [valueNode.data.min, valueNode.data.max];
+    
+    if (node.data.assignedNodeData.functionName === 'bufcheck') {
+      args = [
+        node.data.assignedNodeData.target,
+        node.data.assignedNodeData.buff,
+        node.data.assignedNodeData.mode
+      ];
+    } else if (node.data.assignedNodeData.functionName === 'getdata') {
+      args = [
+        node.data.assignedNodeData.target,
+        node.data.assignedNodeData.id
+      ];
+    } else if (node.data.assignedNodeData.functionName === 'random') {
+      args = [
+        node.data.assignedNodeData.min,
+        node.data.assignedNodeData.max
+      ];
     }
-    // ...other cases
+    // ...other cases as needed
 
     const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-    funcCall = `${valueNode.data.functionName}(${formattedArgs})`;
+    funcCall = `${node.data.assignedNodeData.functionName}(${formattedArgs})`;
     assignedScript = `${assignedValue}:${funcCall}/`;
   }
 
