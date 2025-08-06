@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useMemo } from 'react'; // Added useMemo import
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -150,7 +150,8 @@ function Flow() {
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  // FIX: Added setEdges to dependency array for onConnect
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   const onNodeDataChange = useCallback((id, newData) => {
     setNodes((nds) =>
@@ -173,6 +174,14 @@ function Flow() {
 
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
+  // FIX: Memoized nodeColors object so it doesn't change on every render
+  const nodeColors = useMemo(() => ({
+    'Timing': isDarkMode ? '#585858' : '#d0e0ff',
+    'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
+    'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
+    'Conditional': isDarkMode ? '#8a8a4a' : '#ffffb8',
+  }), [isDarkMode]); // Only recreate when isDarkMode changes
+
   // Define colors based on mode
   const backgroundColor = isDarkMode ? '#333333' : '#ffffff';
   const textColor = isDarkMode ? '#ffffff' : '#333333';
@@ -183,21 +192,14 @@ function Flow() {
   const paletteBgColor = isDarkMode ? '#222' : '#fafafa';
   const paletteBorderColor = isDarkMode ? '#333' : '#e0e0e0';
 
-  // Node specific colors from the prototype image
-  const nodeColors = {
-    'Timing': isDarkMode ? '#585858' : '#d0e0ff',
-    'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
-    'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
-    'Conditional': isDarkMode ? '#8a8a4a' : '#ffffb8',
-  };
-
   // Helper function to apply current theme colors and specific node colors to node data
+  // FIX: Ensured dependencies are correct for useCallback
   const getThemedNodeData = useCallback((nodeData) => ({
     ...nodeData,
     textColor: textColor,
     borderColor: isDarkMode ? '#555555' : '#cccccc',
     nodeColor: nodeColors[nodeData.category] || (isDarkMode ? '#585858' : '#d0e0ff'),
-  }), [textColor, isDarkMode, nodeColors]);
+  }), [textColor, isDarkMode, nodeColors]); // nodeColors is now a stable dependency
 
   // Apply themed data to all current nodes for consistent rendering
   const themedNodes = nodes.map(node => ({
