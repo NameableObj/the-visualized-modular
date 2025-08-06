@@ -350,25 +350,35 @@ function Flow() {
       let assignedValue = node.data.variable || 'VALUE_0';
       let assignedScript = '';
 
+      // --- NEW LOGIC: Walk past timing nodes to find the real source node ---
+      let realSourceNode = null;
       if (inputEdge) {
-        const sourceNode = nodeMap.get(inputEdge.source);
-        if (sourceNode) {
-          // Generate the function call for the source node
-          let funcCall = '';
-          let args = [];
-          if (sourceNode.data.functionName === 'bufcheck') {
-            args = [sourceNode.data.target, sourceNode.data.buff, sourceNode.data.mode];
-          } else if (sourceNode.data.functionName === 'getdata') {
-            args = [sourceNode.data.target, sourceNode.data.id];
-          } else if (sourceNode.data.functionName === 'random') {
-            args = [sourceNode.data.min, sourceNode.data.max];
-          }
-          // ...add other functionName cases as needed
-
-          const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-          funcCall = `${sourceNode.data.functionName}(${formattedArgs})`;
-          assignedScript = `${assignedValue}:${funcCall}/`;
+        let candidateNode = nodeMap.get(inputEdge.source);
+        // Walk forward if the candidate is a timing node
+        while (candidateNode && candidateNode.type === 'timingNode') {
+          // Find the next node connected to this timing node's output
+          const nextEdge = edges.find(e => e.source === candidateNode.id);
+          if (!nextEdge) break;
+          candidateNode = nodeMap.get(nextEdge.target);
         }
+        realSourceNode = candidateNode;
+      }
+
+      if (realSourceNode && realSourceNode.type !== 'timingNode') {
+        let funcCall = '';
+        let args = [];
+        if (realSourceNode.data.functionName === 'bufcheck') {
+          args = [realSourceNode.data.target, realSourceNode.data.buff, realSourceNode.data.mode];
+        } else if (realSourceNode.data.functionName === 'getdata') {
+          args = [realSourceNode.data.target, realSourceNode.data.id];
+        } else if (realSourceNode.data.functionName === 'random') {
+          args = [realSourceNode.data.min, realSourceNode.data.max];
+        }
+        // ...add other functionName cases as needed
+
+        const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+        funcCall = `${realSourceNode.data.functionName}(${formattedArgs})`;
+        assignedScript = `${assignedValue}:${funcCall}/`;
       } else if (node.data.func) {
         // If no input, use manual function string
         assignedScript = `${assignedValue}:${node.data.func}/`;
