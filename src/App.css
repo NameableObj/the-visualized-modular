@@ -47,3 +47,22 @@ body {
   color: #fff;
   border-color: #555;
 }
+
+/* Custom node styling for both light and dark mode */
+.custom-node {
+  padding: 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 5px;
+  min-width: 120px; /* Ensure nodes have a minimum width */
+  text-align: center;
+}
+
+/* Styling for draggable items in the palette */
+.dnd-node-palette {
+  transition: transform 0.1s ease-in-out; /* Smooth transition for grab effect */
+}
+
+.dnd-node-palette:active {
+  transform: scale(0.95); /* Slightly shrink when grabbed */
+}
