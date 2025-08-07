@@ -12,7 +12,7 @@ import ReactFlow, {
   ReactFlowProvider,
   Handle,
   Position,
-} from 'reactflow';
+} from 'reactflow'; 
 
 import 'reactflow/dist/style.css';
 import './App.css';
@@ -101,25 +101,21 @@ const AssignmentNode = ({ id, data }) => {
       </div>
 
       <div
-      className="assignment-slot"
-  onDrop={event => {
-    event.preventDefault();
-    event.stopPropagation(); // Stop event from reaching the canvas
-    const transfer = event.dataTransfer.getData('application/reactflow');
-    if (transfer) {
-      const { nodeType, functionData } = JSON.parse(transfer);
-      if (nodeType === 'valueAcquisitionNode') {
-        data.onDataChange(id, { 
-          ...data, 
-          assignedNodeData: functionData 
-        });
-      }
-    }
-  }}
-  onDragOver={e => {
-    e.preventDefault();
-    e.stopPropagation(); // Stop event from reaching the canvas
-  }}
+        onDrop={event => {
+          event.preventDefault();
+          const transfer = event.dataTransfer.getData('application/reactflow');
+          if (transfer) {
+            const { nodeType, functionData } = JSON.parse(transfer);
+            if (nodeType === 'valueAcquisitionNode') {
+              // Just store the function data, don't create a new node
+              data.onDataChange(id, { 
+                ...data, 
+                assignedNodeData: functionData 
+              });
+            }
+          }
+        }}
+        onDragOver={e => e.preventDefault()}
         style={{
           border: '2px dashed #888',
           padding: '10px',
@@ -358,10 +354,6 @@ function Flow() {
     (event) => {
       event.preventDefault();
 
-      if (event.target.closest('.assignment-slot')) {
-      return;
-    }
-
       const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
       const transferData = JSON.parse(event.dataTransfer.getData('application/reactflow'));
 
@@ -420,118 +412,100 @@ function Flow() {
     const generatedVariables = new Map();
     let variableCounter = 0;
 
-    const traverseGraph = (startNodeId) => {
-  let subScript = '';
-  const visited = new Set();
-  const queue = [startNodeId];
+        const traverseGraph = (startNodeId) => {
+      let subScript = '';
+      const visited = new Set();
+      const queue = [startNodeId];
 
-  while (queue.length > 0) {
-    const nodeId = queue.shift();
-    if (visited.has(nodeId)) continue;
-    visited.add(nodeId);
+      while (queue.length > 0) {
+        const nodeId = queue.shift();
+        if (visited.has(nodeId)) continue;
+        visited.add(nodeId);
 
-    const node = nodeMap.get(nodeId);
-    if (!node || node.type === 'timingNode') continue;
+        const node = nodeMap.get(nodeId);
+        if (!node || node.type === 'timingNode') continue;
 
-    // --- INSERT THIS BLOCK HERE ---
-    if (node.type === 'assignmentNode') {
-  let assignedValue = node.data.variable || 'VALUE_0';
-  let assignedScript = '';
+        if (node.type === 'assignmentNode') {
+          const assignedValue = node.data.variable || 'VALUE_0';
+          const valueData = node.data.assignedNodeData;
+          let assignedScript = '';
 
-  // Use the embedded node data directly
-  if (node.data.assignedNodeData) {
-    let funcCall = '';
-    let args = [];
-    
-    if (node.data.assignedNodeData.functionName === 'bufcheck') {
-      args = [
-        node.data.assignedNodeData.target,
-        node.data.assignedNodeData.buff,
-        node.data.assignedNodeData.mode
-      ];
-    } else if (node.data.assignedNodeData.functionName === 'getdata') {
-      args = [
-        node.data.assignedNodeData.target,
-        node.data.assignedNodeData.id
-      ];
-    } else if (node.data.assignedNodeData.functionName === 'random') {
-      args = [
-        node.data.assignedNodeData.min,
-        node.data.assignedNodeData.max
-      ];
-    }
-    // ...other cases as needed
+          if (valueData) {
+            let args = [];
+            if (valueData.functionName === 'bufcheck') {
+              args = [valueData.target, valueData.buff, valueData.mode];
+            } else if (valueData.functionName === 'getdata') {
+              args = [valueData.target, valueData.id];
+            } else if (valueData.functionName === 'random') {
+              args = [valueData.min, valueData.max];
+            }
+            // Add other value acquisition function cases here...
 
-    const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-    funcCall = `${node.data.assignedNodeData.functionName}(${formattedArgs})`;
-    assignedScript = `${assignedValue}:${funcCall}/`;
-  }
+            const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+            const funcCall = `${valueData.functionName}(${formattedArgs})`;
+            assignedScript = `${assignedValue}:${funcCall}/`;
+          }
+          subScript += assignedScript;
 
-  subScript += assignedScript;
-  continue;
-}
-    // --- END OF INSERTED BLOCK ---
+        } else if (node.type === 'ifNode') {
+          subScript += `IF(${node.data.condition}):`;
+          const trueEdges = edgeMap.get(`${node.id}-true`) || [];
+          if (trueEdges.length > 0) {
+            subScript += traverseGraph(trueEdges[0].target);
+          }
+          subScript += '/';
 
-    if (node.type === 'ifNode') {
-      subScript += `IF(${node.data.condition}):`;
+        } else {
+          let functionCall = node.data.functionName;
+          let args = [];
+          if (node.data.functionName === 'bufcheck') {
+            args = [node.data.target, node.data.buff, node.data.mode];
+          } else if (node.data.functionName === 'getdata') {
+            args = [node.data.target, node.data.id];
+          } else if (node.data.functionName === 'unitstate') {
+            args = [node.data.target];
+          } else if (node.data.functionName === 'random') {
+            args = [node.data.min, node.data.max];
+            const varName = `VALUE_${variableCounter++}`;
+            generatedVariables.set(node.id, varName);
+            functionCall = `${varName}:${functionCall}`;
+          } else if (node.data.functionName === 'buf') {
+            args = [node.data.target, node.data.buff, node.data.potency, node.data.count, node.data.activeRound];
+          } else if (node.data.functionName === 'bonusdmg') {
+            args = [node.data.target, node.data.amount, node.data.dmgType, node.data.sinType];
+          } else if (node.data.functionName === 'setdata') {
+            args = [node.data.target, node.data.id, node.data.value];
+          } else if (node.data.functionName === 'scale') {
+            args = [node.data.amount, node.data.operator];
+          } else if (node.data.functionName === 'dmgmult') {
+            args = [node.data.amount];
+          } else if (node.data.functionName === 'breakrecover') {
+            args = [node.data.target];
+          }
 
-      const trueEdges = edgeMap.get(`${node.id}-true`) || [];
-      if (trueEdges.length > 0) {
-        subScript += traverseGraph(trueEdges[0].target);
-      }
-      subScript += '/';
-    } else {
-      let functionCall = node.data.functionName;
-      let args = [];
-      if (node.data.functionName === 'bufcheck') {
-        args = [node.data.target, node.data.buff, node.data.mode];
-      } else if (node.data.functionName === 'getdata') {
-        args = [node.data.target, node.data.id];
-      } else if (node.data.functionName === 'unitstate') {
-        args = [node.data.target];
-      } else if (node.data.functionName === 'random') {
-        args = [node.data.min, node.data.max];
-        const varName = `VALUE_${variableCounter++}`;
-        generatedVariables.set(node.id, varName);
-        functionCall = `${varName}:${functionCall}`;
-      } else if (node.data.functionName === 'buf') {
-        args = [node.data.target, node.data.buff, node.data.potency, node.data.count, node.data.activeRound];
-      } else if (node.data.functionName === 'bonusdmg') {
-        args = [node.data.target, node.data.amount, node.data.dmgType, node.data.sinType];
-      } else if (node.data.functionName === 'setdata') {
-        args = [node.data.target, node.data.id, node.data.value];
-      } else if (node.data.functionName === 'scale') {
-        args = [node.data.amount, node.data.operator];
-      } else if (node.data.functionName === 'dmgmult') {
-        args = [node.data.amount];
-      } else if (node.data.functionName === 'breakrecover') {
-        args = [node.data.target];
-      }
+          const inputEdges = edges.filter(edge => edge.target === node.id);
+          inputEdges.forEach(edge => {
+            const varName = generatedVariables.get(edge.source);
+            if (varName) {
+              const argIndex = 0; // Simplified
+              args[argIndex] = varName;
+            }
+          });
 
-      // Replace arguments with variable names if a connection exists
-      const inputEdges = edges.filter(edge => edge.target === node.id);
-      inputEdges.forEach(edge => {
-        const varName = generatedVariables.get(edge.source);
-        if (varName) {
-          const argIndex = ['random'].includes(node.data.functionName) ? 0 : 0; // Simplified for now
-          args[argIndex] = varName;
+          const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+          subScript += `${functionCall}(${formattedArgs})/`;
         }
-      });
 
-      // Filter out undefined/null arguments
-      const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-      subScript += `${functionCall}(${formattedArgs})/`;
-    }
-
-    const nextEdges = edgeMap.get(`${node.id}-output`) || [];
-    nextEdges.forEach(edge => {
-      if (!visited.has(edge.target)) {
-        queue.push(edge.target);
+        const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+        nextEdges.forEach(edge => {
+          if (!visited.has(edge.target)) {
+            queue.push(edge.target);
+          }
+        });
       }
-    });
-  }
-  return subScript;
-};
+      return subScript;
+    };
+
     
     // Start traversal from the timing node's output
     const startEdges = edges.filter(edge => edge.source === timingNode.id);
