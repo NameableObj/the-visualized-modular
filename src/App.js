@@ -1057,7 +1057,7 @@ if (node.type === 'ifNode') {
     functionString += '/';
   }
   subScript += functionString;
-  
+
     }
 
     
@@ -1075,13 +1075,17 @@ if (node.type === 'ifNode') {
     
     // Start traversal from the timing node's output
     const startEdges = edges.filter(edge => edge.source === timingNode.id);
-startEdges.forEach(edge => {
-  script += traverseGraph(edge.target);
-});
+  startEdges.forEach(edge => {
+    script += traverseGraph(edge.target);
+  });
 
-    setGeneratedScript(script);
-    setShowExportModal(true);
-  }, [nodes, edges, setNodes, onNodeDataChange]);
+   if (!script.endsWith('/')) {
+    script += '/';
+  }
+
+     setGeneratedScript(script);
+  setShowExportModal(true);
+}, [nodes, edges, setNodes, onNodeDataChange]);
 
   return (
     <div className={isDarkMode ? 'dark-mode' : 'light-mode'} style={{ width: '100vw', height: '100vh', backgroundColor: backgroundColor, display: 'flex', flexDirection: 'column' }}>
