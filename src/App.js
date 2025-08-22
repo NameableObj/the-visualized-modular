@@ -130,12 +130,12 @@ const renderEmbeddedNode = () => {
       )}
 
       {funcName === 'math' && (
-        <div>
-          Expression: <input type="text" value={funcData.expression || ''} 
-            onChange={e => updateEmbeddedData('expression', e.target.value)} 
-            placeholder="VALUE_0*VALUE_0" />
-        </div>
-      )}
+  <div>
+    Expression: <input type="text" value={funcData.expression || ''} 
+      onChange={e => updateEmbeddedData('expression', e.target.value)} 
+      placeholder="VALUE_0*VALUE_0" />
+  </div>
+)}
       
       {funcName === 'mpcheck' && (
         <div>Target: <input type="text" value={funcData.target || ''} 
@@ -1584,37 +1584,37 @@ const newNode = {
     setHoveredFunction(null);
   }, []);
 
-  const generateScript = useCallback(() => {
-    let script = "Modular/";
-    const nodeMap = new Map(nodes.map(node => [node.id, node]));
-    const edgeMap = new Map();
-    edges.forEach(edge => {
-      const sourceKey = `${edge.source}-${edge.sourceHandle}`;
-      if (!edgeMap.has(sourceKey)) {
-        edgeMap.set(sourceKey, []);
-      }
-      edgeMap.get(sourceKey).push(edge);
-    });
+const generateScript = useCallback(() => {
+  let script = "Modular/";
+  const nodeMap = new Map(nodes.map(node => [node.id, node]));
+  const edgeMap = new Map();
+  edges.forEach(edge => {
+    const sourceKey = `${edge.source}-${edge.sourceHandle}`;
+    if (!edgeMap.has(sourceKey)) {
+      edgeMap.set(sourceKey, []);
+    }
+    edgeMap.get(sourceKey).push(edge);
+  });
 
-   const timingNode = nodes.find(node => node.type === 'timingNode');
-if (!timingNode) {
-  setGeneratedScript("Needs to start with a timing node goober");
-  setShowExportModal(true);
-  return;
-}
+  const timingNode = nodes.find(node => node.type === 'timingNode');
+  if (!timingNode) {
+    setGeneratedScript("Needs to start with a timing node goober");
+    setShowExportModal(true);
+    return;
+  }
 
-// Handle parameterized timing functions
-if (timingNode.data.hasParameters && timingNode.data.parameters) {
-  const params = Object.values(timingNode.data.parameters).join(',');
-  script += `TIMING:${timingNode.data.functionName}(${params})/`;
-} else {
-  script += `TIMING:${timingNode.data.functionName}/`;
-}
+  // Handle parameterized timing functions
+  if (timingNode.data.hasParameters && timingNode.data.parameters) {
+    const params = Object.values(timingNode.data.parameters).join(',');
+    script += `TIMING:${timingNode.data.functionName}(${params})/`;
+  } else {
+    script += `TIMING:${timingNode.data.functionName}/`;
+  }
 
-    const generatedVariables = new Map();
-    let variableCounter = 0;
+  const generatedVariables = new Map();
+  let variableCounter = 0;
 
-   const traverseGraph = (startNodeId) => {
+  const traverseGraph = (startNodeId) => {
     let subScript = '';
     const visited = new Set();
     const queue = [startNodeId];
@@ -1628,30 +1628,55 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
       if (!node || node.type === 'timingNode') continue;
 
       if (node.type === 'assignmentNode') {
-        // ... existing assignment node handling ...
-      } else if (node.type === 'ifNode') {
-        subScript += `IF(${node.data.condition}):`;
-
-        const trueEdges = edgeMap.get(`${node.id}-true`) || [];
-        if (trueEdges.length > 0) {
-          const trueBranchScript = traverseGraph(trueEdges[0].target);
-          // Remove trailing slash if present to avoid double slashes
-          subScript += trueBranchScript.endsWith('/') ? trueBranchScript.slice(0, -1) : trueBranchScript;
+        const funcData = node.data.assignedNodeData;
+        if (!funcData) {
+          // If there's no assigned function, skip or handle error
+          return;
         }
         
-        // Handle false branch if it exists
-        const falseEdges = edgeMap.get(`${node.id}-false`) || [];
-        if (falseEdges.length > 0) {
-          subScript += ':';
-          const falseBranchScript = traverseGraph(falseEdges[0].target);
-          // Remove trailing slash if present to avoid double slashes
-          subScript += falseBranchScript.endsWith('/') ? falseBranchScript.slice(0, -1) : falseBranchScript;
-        }
+        const funcName = funcData.functionName;
+        let args = [];
         
-        subScript += '/';
-      } else if (node.type === 'continueIfNode') {
-        // Handle CONTINUEIF node
-        subScript += `CONTINUEIF(${node.data.condition})/`;
+        // Handle each function type
+        if (funcName === 'math') {
+          args = [funcData.expression || ''];
+        } else if (funcName === 'hpcheck') {
+          args = [funcData.target || '', funcData.mode || 'normal'];
+        } else if (funcName === 'mpcheck') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'bufcheck') {
+          args = [funcData.target || '', funcData.buff || '', funcData.mode || 'stack'];
+        } else if (funcName === 'getdata') {
+          args = [funcData.target || '', funcData.id || ''];
+        } else if (funcName === 'random') {
+          args = [funcData.min || '', funcData.max || ''];
+        } else if (funcName === 'unitstate') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'getid') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'getcharacterid') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'instid') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'speedcheck') {
+          args = [funcData.target || '', funcData.slot || ''];
+        } else if (funcName === 'getpattern') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'deadallies') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'getshield') {
+          args = [funcData.target || ''];
+        } else if (funcName === 'areallied') {
+          args = [funcData.target1 || '', funcData.target2 || ''];
+        } else if (funcName === 'getcoincount') {
+          args = [funcData.target || 'Self', funcData.type || 'cur'];
+        } else if (funcName === 'allcoinstate') {
+          args = [funcData.target || 'Self', funcData.type || 'full'];
+        }
+        // Add more function types as needed
+        
+        // Build the script part for assignment
+        subScript += `ASSIGN:${node.data.variable},${funcName}(${args.join(',')})/`;
         
         // Continue traversal
         const nextEdges = edgeMap.get(`${node.id}-output`) || [];
@@ -1660,16 +1685,8 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
             queue.push(edge.target);
           }
         });
-      } else if (funcName === 'math') {
-      args = [node.data.assignedNodeData.expression || ''];
       }
-      // Continue traversal for other nodes
-      const nextEdges = edgeMap.get(`${node.id}-output`) || [];
-      nextEdges.forEach(edge => {
-        if (!visited.has(edge.target)) {
-          queue.push(edge.target);
-        }
-      });
+      // Add handling for other node types here (ifNode, continueIfNode, etc.)
     }
     return subScript;
   };
