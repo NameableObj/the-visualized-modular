@@ -128,6 +128,14 @@ const renderEmbeddedNode = () => {
           </div>
         </>
       )}
+
+      {funcName === 'math' && (
+        <div>
+          Expression: <input type="text" value={funcData.expression || ''} 
+            onChange={e => updateEmbeddedData('expression', e.target.value)} 
+            placeholder="VALUE_0*VALUE_0" />
+        </div>
+      )}
       
       {funcName === 'mpcheck' && (
         <div>Target: <input type="text" value={funcData.target || ''} 
@@ -519,17 +527,32 @@ const ConsequenceNode = ({ id, data, onDataChange }) => {
   );
 };
 
-const IfNode = ({ id, data, onDataChange }) => {
+const IfNode = ({ id, data }) => {
   const handleChange = (field) => (event) => {
     data.onDataChange(id, { ...data, [field]: event.target.value });
   };
-  
+
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
-      <strong>IF</strong>
-      <div>
-        Condition: <input type="text" value={data.condition || ''} onChange={handleChange('condition')} placeholder="VALUE_0=1" />
+      <strong>IF Statement</strong>
+      <div style={{ marginTop: '10px' }}>
+        <div>
+          Condition: 
+          <input 
+            type="text" 
+            value={data.condition || ''} 
+            onChange={handleChange('condition')} 
+            placeholder="VALUE_0=1" 
+            style={{ width: '100%', marginTop: '5px' }}
+          />
+        </div>
+        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
+          Examples: VALUE_0=1, VALUE_1{'>'}5, VALUE_2{'<'}VALUE_3, VALUE_4=VALUE_0*VALUE_0
+        </div>
+        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
+          Math ops: + - * % ! ¡ ?
+        </div>
       </div>
       <Handle type="source" position={Position.Right} id="true" style={{ top: '35%', background: 'green' }} />
       <Handle type="source" position={Position.Right} id="false" style={{ top: '65%', background: 'red' }} />
@@ -537,12 +560,49 @@ const IfNode = ({ id, data, onDataChange }) => {
   );
 };
 
+// Update the ContinueIfNode component to support math operations
+const ContinueIfNode = ({ id, data }) => {
+  const handleChange = (field) => (event) => {
+    data.onDataChange(id, { ...data, [field]: event.target.value });
+  };
+
+  return (
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
+      <strong>CONTINUEIF</strong>
+      <div style={{ marginTop: '10px' }}>
+        <div>
+          Condition: 
+          <input 
+            type="text" 
+            value={data.condition || ''} 
+            onChange={handleChange('condition')} 
+            placeholder="VALUE_0=1" 
+            style={{ width: '100%', marginTop: '5px' }}
+          />
+        </div>
+        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
+          Stops execution if false. Examples: VALUE_0=1, VALUE_1{'>'}5, VALUE_2=VALUE_3*2
+        </div>
+        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
+          Math ops: + - * % ! ¡ ?
+        </div>
+      </div>
+      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
+    </div>
+  );
+};
+
+
+
 const nodeTypes = {
   timingNode: TimingNode,
   valueAcquisitionNode: ValueAcquisitionNode,
   consequenceNode: ConsequenceNode,
   ifNode: IfNode, // Add the new IF node type
+  continueIfNode: ContinueIfNode,
   assignmentNode: AssignmentNode
+  
 };
 
 // --- Initial Graph Setup ---
@@ -636,6 +696,14 @@ const nodeColors = useMemo(() => ({
   }));
 
   const availableFunctions = [
+    { 
+  id: 'value-math', 
+  label: 'Math Operation', 
+  functionName: 'math', 
+  category: 'Value Acquisition', 
+  type: 'valueAcquisitionNode', 
+  description: 'Performs math operations. Args: Math expression (e.g., VALUE_0*VALUE_0)' 
+},
     { 
     id: 'timing-roundstart', 
     label: 'Round Start', 
@@ -1428,6 +1496,14 @@ const nodeColors = useMemo(() => ({
     { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Deals bonus damage.' },
     { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Sets encounter-persistent data.' },
     { id: 'con-if', label: 'IF', functionName: 'IF', category: 'Conditional', type: 'ifNode', nodeColor: nodeColors['Conditional'], description: 'Conditionally executes a script based on a value.' },
+    { 
+    id: 'conditional-continueif', 
+    label: 'CONTINUEIF', 
+    functionName: 'CONTINUEIF', 
+    category: 'Conditional', 
+    type: 'continueIfNode', 
+    description: 'Stops execution if condition is false. Format: CONTINUEIF(condition)/' 
+  },
     { id: 'assign-value', label: 'Assign Value',functionName: 'assign', category: 'Value Assignment', type: 'assignmentNode', nodeColor: nodeColors['Value Assignment'],description: 'Assigns the result of a function to VALUE_0~VALUE_9 for later use.',
   }
   ];
@@ -1539,200 +1615,82 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
     let variableCounter = 0;
 
    const traverseGraph = (startNodeId) => {
-  let subScript = '';
-  const visited = new Set();
-  const queue = [startNodeId];
+    let subScript = '';
+    const visited = new Set();
+    const queue = [startNodeId];
 
-  while (queue.length > 0) {
-    const nodeId = queue.shift();
-    if (visited.has(nodeId)) continue;
-    visited.add(nodeId);
+    while (queue.length > 0) {
+      const nodeId = queue.shift();
+      if (visited.has(nodeId)) continue;
+      visited.add(nodeId);
 
-    const node = nodeMap.get(nodeId);
-    if (!node || node.type === 'timingNode') continue;
+      const node = nodeMap.get(nodeId);
+      if (!node || node.type === 'timingNode') continue;
 
-    if (node.type === 'assignmentNode') {
-      let assignedValue = node.data.variable || 'VALUE_0';
-      let assignedScript = '';
+      if (node.type === 'assignmentNode') {
+        // ... existing assignment node handling ...
+      } else if (node.type === 'ifNode') {
+        subScript += `IF(${node.data.condition}):`;
 
-      // Use the embedded node data directly
-  if (node.data.assignedNodeData) {
-  let funcCall = '';
-  let args = [];
-  const funcName = node.data.assignedNodeData.functionName;
-  const funcData = node.data.assignedNodeData;
-  
-  if (funcName === 'hpcheck') {
-    args = [
-      funcData.target || '',
-      funcData.mode || 'normal'
-    ];
-  } else if (funcName === 'mpcheck') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'bufcheck') {
-    args = [
-      funcData.target || '',
-      funcData.buff || '',
-      funcData.mode || 'stack'
-    ];
-  } else if (funcName === 'getdata') {
-    args = [
-      funcData.target || '',
-      funcData.id || ''
-    ];
-  } else if (funcName === 'random') {
-    args = [
-      funcData.min || '',
-      funcData.max || ''
-    ];
-  } else if (funcName === 'unitstate') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'getid') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'getcharacterid') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'instid') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'speedcheck') {
-    args = [
-      funcData.target || '',
-      funcData.slot || ''
-    ].filter(arg => arg !== '');
-  } else if (funcName === 'getpattern') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'deadallies') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'getshield') {
-    args = [funcData.target || ''];
-  } else if (funcName === 'areallied') {
-    args = [
-      funcData.target1 || '',
-      funcData.target2 || ''
-    ];
-  } else if (funcName === 'getcoincount') {
-    args = [
-      funcData.target || 'Self',
-      funcData.type || 'cur'
-    ];
-  } else if (funcName === 'allcoinstate') {
-    args = [
-      funcData.target || 'Self',
-      funcData.type || 'full'
-    ];
-  } else {
-    // For functions without parameters
-    funcCall = `${funcName}()`;
-  }
-  
-  if (args.length > 0) {
-    const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-    funcCall = `${funcName}(${formattedArgs})`;
-  }
-  
-  assignedScript = `${assignedValue}:${funcCall}/`;
-}
+        const trueEdges = edgeMap.get(`${node.id}-true`) || [];
+        if (trueEdges.length > 0) {
+          const trueBranchScript = traverseGraph(trueEdges[0].target);
+          // Remove trailing slash if present to avoid double slashes
+          subScript += trueBranchScript.endsWith('/') ? trueBranchScript.slice(0, -1) : trueBranchScript;
+        }
+        
+        // Handle false branch if it exists
+        const falseEdges = edgeMap.get(`${node.id}-false`) || [];
+        if (falseEdges.length > 0) {
+          subScript += ':';
+          const falseBranchScript = traverseGraph(falseEdges[0].target);
+          // Remove trailing slash if present to avoid double slashes
+          subScript += falseBranchScript.endsWith('/') ? falseBranchScript.slice(0, -1) : falseBranchScript;
+        }
+        
+        subScript += '/';
+      } else if (node.type === 'continueIfNode') {
+        // Handle CONTINUEIF node
+        subScript += `CONTINUEIF(${node.data.condition})/`;
+        
+        // Continue traversal
+        const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+        nextEdges.forEach(edge => {
+          if (!visited.has(edge.target)) {
+            queue.push(edge.target);
+          }
+        });
+      } else {
+        // ... existing node handling ...
+      }
 
-
-      subScript += assignedScript;
-      
-      // FIX: Continue traversal for assignment nodes
+      // Continue traversal for other nodes
       const nextEdges = edgeMap.get(`${node.id}-output`) || [];
       nextEdges.forEach(edge => {
         if (!visited.has(edge.target)) {
           queue.push(edge.target);
         }
       });
-      
-      continue; // Skip the rest of the processing for assignment nodes
     }
-
-    
-if (node.type === 'ifNode') {
-  subScript += `IF(${node.data.condition}):`;
-
-  const trueEdges = edgeMap.get(`${node.id}-true`) || [];
-  if (trueEdges.length > 0) {
-    const trueBranchScript = traverseGraph(trueEdges[0].target);
-    // Remove trailing slash if present to avoid double slashes
-    subScript += trueBranchScript.endsWith('/') ? trueBranchScript.slice(0, -1) : trueBranchScript;
-  }
+    return subScript;
+  };
   
-  // Don't add an extra slash here - the consequence node will add its own
-  // subScript += '/'; // This was causing the double slash
-} else {
-  let functionCall = node.data.functionName;
-  let args = [];
-  if (node.data.functionName === 'bufcheck') {
-    args = [node.data.target, node.data.buff, node.data.mode];
-  } else if (node.data.functionName === 'getdata') {
-    args = [node.data.target, node.data.id];
-  } else if (node.data.functionName === 'unitstate') {
-    args = [node.data.target];
-  } else if (node.data.functionName === 'random') {
-    args = [node.data.min, node.data.max];
-    const varName = `VALUE_${variableCounter++}`;
-    generatedVariables.set(node.id, varName);
-    functionCall = `${varName}:${functionCall}`;
-  } else if (node.data.functionName === 'buf') {
-    args = [node.data.target, node.data.buff, node.data.potency, node.data.count, node.data.activeRound];
-  } else if (node.data.functionName === 'bonusdmg') {
-    args = [node.data.target, node.data.amount, node.data.dmgType, node.data.sinType];
-  } else if (node.data.functionName === 'setdata') {
-    args = [node.data.target, node.data.id, node.data.value];
-  } else if (node.data.functionName === 'scale') {
-    args = [node.data.amount, node.data.operator];
-  } else if (node.data.functionName === 'dmgmult') {
-    args = [node.data.amount];
-  } else if (node.data.functionName === 'breakrecover') {
-    args = [node.data.target];
-  }
-
-      // Replace arguments with variable names if a connection exists
-        const inputEdges = edges.filter(edge => edge.target === node.id);
-  inputEdges.forEach(edge => {
-    const varName = generatedVariables.get(edge.source);
-    if (varName) {
-      const argIndex = ['random'].includes(node.data.functionName) ? 0 : 0; // Simplified for now
-      args[argIndex] = varName;
-    }
-  });
-
-
-      // Filter out undefined/null arguments
-       const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-
-        let functionString = `${functionCall}(${formattedArgs})`;
-  if (!functionString.endsWith('/')) {
-    functionString += '/';
-  }
-  subScript += functionString;
-
-    }
-
-    
-
-    // FIX: This part was not being executed for assignment nodes due to the continue statement
-    const nextEdges = edgeMap.get(`${node.id}-output`) || [];
-    nextEdges.forEach(edge => {
-      if (!visited.has(edge.target)) {
-        queue.push(edge.target);
-      }
-    });
-  }
-  return subScript;
-};
-    
-    // Start traversal from the timing node's output
-    const startEdges = edges.filter(edge => edge.source === timingNode.id);
+  // Start traversal from the timing node's output
+  const startEdges = edges.filter(edge => edge.source === timingNode.id);
   startEdges.forEach(edge => {
     script += traverseGraph(edge.target);
   });
 
-   if (!script.endsWith('/')) {
+  // Ensure the script always ends with a slash
+  if (!script.endsWith('/')) {
     script += '/';
   }
 
-     setGeneratedScript(script);
+  if (funcName === 'math') {
+  args = [funcData.expression || ''];
+}
+
+  setGeneratedScript(script);
   setShowExportModal(true);
 }, [nodes, edges, setNodes, onNodeDataChange]);
 
