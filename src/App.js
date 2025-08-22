@@ -80,47 +80,150 @@ const AssignmentNode = ({ id, data }) => {
     data.onDataChange(id, { ...data, [field]: event.target.value });
   };
 
-  // Render the embedded value node
+   // Helper to update embedded node data
+  const updateEmbeddedData = (field, value) => {
+    data.onDataChange(id, {
+      ...data,
+      assignedNodeData: { 
+        ...data.assignedNodeData, 
+        [field]: value 
+      }
+    });
+  };
+
+ // Render the embedded value node with appropriate inputs
   const renderEmbeddedNode = () => {
     if (!data.assignedNodeData) return null;
+    
+    const funcData = data.assignedNodeData;
+    const funcName = funcData.functionName;
 
     return (
       <div style={{
         padding: '8px',
-        background: data.assignedNodeData.nodeColor,
+        background: funcData.nodeColor,
         borderRadius: '3px',
-        margin: '4px 0'
+        margin: '4px 0',
+        color: funcData.textColor
       }}>
-        <strong>{data.assignedNodeData.label}</strong>
-        {data.assignedNodeData.functionName === 'bufcheck' && (
+        <strong>{funcData.label}</strong>
+        {funcData.functionName && <div style={{ fontSize: '0.8em' }}>{funcData.functionName}</div>}
+        
+        {/* Dynamic input fields based on function type */}
+        {funcName === 'bufcheck' && (
           <>
-            <div>Target: <input type="text" value={data.assignedNodeData.target || ''} 
-              onChange={e => data.onDataChange(id, { 
-                ...data, 
-                assignedNodeData: { ...data.assignedNodeData, target: e.target.value }
-              })} 
+            <div>Target: <input type="text" value={funcData.target || ''} 
+              onChange={e => updateEmbeddedData('target', e.target.value)} 
               placeholder="Self, Target..." />
             </div>
-            <div>Buff: <input type="text" value={data.assignedNodeData.buff || ''} 
-              onChange={e => data.onDataChange(id, {
-                ...data,
-                assignedNodeData: { ...data.assignedNodeData, buff: e.target.value }
-              })}
+            <div>Buff: <input type="text" value={funcData.buff || ''} 
+              onChange={e => updateEmbeddedData('buff', e.target.value)}
               placeholder="Keyword" />
             </div>
             <div>Mode: 
-              <select value={data.assignedNodeData.mode || 'stack'}
-                onChange={e => data.onDataChange(id, {
-                  ...data,
-                  assignedNodeData: { ...data.assignedNodeData, mode: e.target.value }
-                })}>
-                <option>stack</option>
-                <option>turn</option>
+              <select value={funcData.mode || 'stack'}
+                onChange={e => updateEmbeddedData('mode', e.target.value)}>
+                <option value="stack">stack</option>
+                <option value="turn">turn</option>
+                <option value="+">+</option>
+                <option value="*">*</option>
+                <option value="consumed">consumed</option>
               </select>
             </div>
           </>
         )}
-        {/* Add similar blocks for other function types */}
+        
+        {funcName === 'getdata' && (
+          <>
+            <div>Target: <input type="text" value={funcData.target || ''} 
+              onChange={e => updateEmbeddedData('target', e.target.value)} 
+              placeholder="Self, Target..." />
+            </div>
+            <div>ID: <input type="text" value={funcData.id || ''} 
+              onChange={e => updateEmbeddedData('id', e.target.value)}
+              placeholder="Data ID" />
+            </div>
+          </>
+        )}
+        
+        {funcName === 'random' && (
+          <>
+            <div>Min: <input type="number" value={funcData.min || ''} 
+              onChange={e => updateEmbeddedData('min', e.target.value)} 
+              placeholder="Min" />
+            </div>
+            <div>Max: <input type="number" value={funcData.max || ''} 
+              onChange={e => updateEmbeddedData('max', e.target.value)}
+              placeholder="Max" />
+            </div>
+          </>
+        )}
+        
+        {funcName === 'hpcheck' && (
+          <>
+            <div>Target: <input type="text" value={funcData.target || ''} 
+              onChange={e => updateEmbeddedData('target', e.target.value)} 
+              placeholder="Self, Target..." />
+            </div>
+            <div>Mode: 
+              <select value={funcData.mode || 'normal'}
+                onChange={e => updateEmbeddedData('mode', e.target.value)}>
+                <option value="normal">normal</option>
+                <option value="%">%</option>
+                <option value="max">max</option>
+                <option value="missing">missing</option>
+                <option value="missing%">missing%</option>
+              </select>
+            </div>
+          </>
+        )}
+        
+        {funcName === 'mpcheck' && (
+          <div>Target: <input type="text" value={funcData.target || ''} 
+            onChange={e => updateEmbeddedData('target', e.target.value)} 
+            placeholder="Self, Target..." />
+          </div>
+        )}
+        
+        {funcName === 'unitstate' && (
+          <div>Target: <input type="text" value={funcData.target || ''} 
+            onChange={e => updateEmbeddedData('target', e.target.value)} 
+            placeholder="Self, Target..." />
+          </div>
+        )}
+        
+        {funcName === 'getid' && (
+          <div>Target: <input type="text" value={funcData.target || ''} 
+            onChange={e => updateEmbeddedData('target', e.target.value)} 
+            placeholder="Self, Target..." />
+          </div>
+        )}
+        
+        {funcName === 'speedcheck' && (
+          <>
+            <div>Target: <input type="text" value={funcData.target || ''} 
+              onChange={e => updateEmbeddedData('target', e.target.value)} 
+              placeholder="Self, Target..." />
+            </div>
+            <div>Slot: <input type="number" value={funcData.slot || ''} 
+              onChange={e => updateEmbeddedData('slot', e.target.value)}
+              placeholder="Slot index (optional)" />
+            </div>
+          </>
+        )}
+        
+        {funcName === 'getshield' && (
+          <div>Target: <input type="text" value={funcData.target || ''} 
+            onChange={e => updateEmbeddedData('target', e.target.value)} 
+            placeholder="Self, Target..." />
+          </div>
+        )}
+        
+        {/* Add more function types as needed */}
+        
+        {!['bufcheck', 'getdata', 'random', 'hpcheck', 'mpcheck', 'unitstate', 'getid', 'speedcheck', 'getshield'].includes(funcName) && (
+          <div>Parameters: This function type doesn't have specialized input fields yet.</div>
+        )}
       </div>
     );
   };
@@ -149,25 +252,25 @@ const AssignmentNode = ({ id, data }) => {
       </div>
 
       <div
-      className="assignment-slot"
-  onDrop={event => {
-    event.preventDefault();
-    event.stopPropagation(); // Stop event from reaching the canvas
-    const transfer = event.dataTransfer.getData('application/reactflow');
-    if (transfer) {
-      const { nodeType, functionData } = JSON.parse(transfer);
-      if (nodeType === 'valueAcquisitionNode') {
-        data.onDataChange(id, { 
-          ...data, 
-          assignedNodeData: functionData 
-        });
-      }
-    }
-  }}
-  onDragOver={e => {
-    e.preventDefault();
-    e.stopPropagation(); // Stop event from reaching the canvas
-  }}
+        className="assignment-slot"
+        onDrop={event => {
+          event.preventDefault();
+          event.stopPropagation();
+          const transfer = event.dataTransfer.getData('application/reactflow');
+          if (transfer) {
+            const { nodeType, functionData } = JSON.parse(transfer);
+            if (nodeType === 'valueAcquisitionNode') {
+              data.onDataChange(id, { 
+                ...data, 
+                assignedNodeData: functionData 
+              });
+            }
+          }
+        }}
+        onDragOver={e => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         style={{
           border: '2px dashed #888',
           padding: '10px',
@@ -184,6 +287,7 @@ const AssignmentNode = ({ id, data }) => {
     </div>
   );
 };
+
 
 const ValueAcquisitionNode = ({ id, data }) => {
   const handleChange = (field) => (event) => {
@@ -824,6 +928,12 @@ const nodeColors = useMemo(() => ({
     { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Returns a buff\'s potency or turns.' },
     { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Retrieves encounter-persistent data.' },
     { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Generates a random integer.' },
+    { id: 'value-hpcheck', label: 'HP Check', functionName: 'hpcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Gets HP value based on arguments' },
+{ id: 'value-mpcheck', label: 'SP Check', functionName: 'mpcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Gets SP value' },
+{ id: 'value-unitstate', label: 'Unit State', functionName: 'unitstate', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns unit state (-1=doesn\'t exist, 0=dead, 1=alive, 2=staggered)' },
+{ id: 'value-getid', label: 'Get ID', functionName: 'getid', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns the unit ID of the target' },
+{ id: 'value-speedcheck', label: 'Speed Check', functionName: 'speedcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns the speed of the target' },
+{ id: 'value-getshield', label: 'Get Shield', functionName: 'getshield', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns the amount of shield on target' },
     { id: 'con-buf', label: 'Apply Buff', functionName: 'buf', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Applies a buff to the target.' },
     { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Deals bonus damage.' },
     { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Sets encounter-persistent data.' },
@@ -957,32 +1067,51 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
 
       // Use the embedded node data directly
       if (node.data.assignedNodeData) {
-        let funcCall = '';
-        let args = [];
-        
-        if (node.data.assignedNodeData.functionName === 'bufcheck') {
-          args = [
-            node.data.assignedNodeData.target,
-            node.data.assignedNodeData.buff,
-            node.data.assignedNodeData.mode
-          ];
-        } else if (node.data.assignedNodeData.functionName === 'getdata') {
-          args = [
-            node.data.assignedNodeData.target,
-            node.data.assignedNodeData.id
-          ];
-        } else if (node.data.assignedNodeData.functionName === 'random') {
-          args = [
-            node.data.assignedNodeData.min,
-            node.data.assignedNodeData.max
-          ];
-        }
-        // ...other cases as needed
-
-        const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-        funcCall = `${node.data.assignedNodeData.functionName}(${formattedArgs})`;
-        assignedScript = `${assignedValue}:${funcCall}/`;
-      }
+  let funcCall = '';
+  let args = [];
+  const funcName = node.data.assignedNodeData.functionName;
+  
+  if (funcName === 'bufcheck') {
+    args = [
+      node.data.assignedNodeData.target,
+      node.data.assignedNodeData.buff,
+      node.data.assignedNodeData.mode
+    ];
+  } else if (funcName === 'getdata') {
+    args = [
+      node.data.assignedNodeData.target,
+      node.data.assignedNodeData.id
+    ];
+  } else if (funcName === 'random') {
+    args = [
+      node.data.assignedNodeData.min,
+      node.data.assignedNodeData.max
+    ];
+  } else if (funcName === 'hpcheck') {
+    args = [
+      node.data.assignedNodeData.target,
+      node.data.assignedNodeData.mode
+    ];
+  } else if (funcName === 'mpcheck') {
+    args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'unitstate') {
+    args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'getid') {
+    args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'speedcheck') {
+    args = [
+      node.data.assignedNodeData.target,
+      node.data.assignedNodeData.slot || ''
+    ].filter(arg => arg !== '');
+  } else if (funcName === 'getshield') {
+    args = [node.data.assignedNodeData.target];
+  }
+  // Add more function types as needed
+  
+  const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+  funcCall = `${funcName}(${formattedArgs})`;
+  assignedScript = `${assignedValue}:${funcCall}/`;
+}
 
       subScript += assignedScript;
       
