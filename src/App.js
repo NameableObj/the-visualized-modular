@@ -420,7 +420,7 @@ function Flow() {
     const generatedVariables = new Map();
     let variableCounter = 0;
 
-    const traverseGraph = (startNodeId) => {
+   const traverseGraph = (startNodeId) => {
   let subScript = '';
   const visited = new Set();
   const queue = [startNodeId];
@@ -433,44 +433,51 @@ function Flow() {
     const node = nodeMap.get(nodeId);
     if (!node || node.type === 'timingNode') continue;
 
-    // --- INSERT THIS BLOCK HERE ---
     if (node.type === 'assignmentNode') {
-  let assignedValue = node.data.variable || 'VALUE_0';
-  let assignedScript = '';
+      let assignedValue = node.data.variable || 'VALUE_0';
+      let assignedScript = '';
 
-  // Use the embedded node data directly
-  if (node.data.assignedNodeData) {
-    let funcCall = '';
-    let args = [];
-    
-    if (node.data.assignedNodeData.functionName === 'bufcheck') {
-      args = [
-        node.data.assignedNodeData.target,
-        node.data.assignedNodeData.buff,
-        node.data.assignedNodeData.mode
-      ];
-    } else if (node.data.assignedNodeData.functionName === 'getdata') {
-      args = [
-        node.data.assignedNodeData.target,
-        node.data.assignedNodeData.id
-      ];
-    } else if (node.data.assignedNodeData.functionName === 'random') {
-      args = [
-        node.data.assignedNodeData.min,
-        node.data.assignedNodeData.max
-      ];
+      // Use the embedded node data directly
+      if (node.data.assignedNodeData) {
+        let funcCall = '';
+        let args = [];
+        
+        if (node.data.assignedNodeData.functionName === 'bufcheck') {
+          args = [
+            node.data.assignedNodeData.target,
+            node.data.assignedNodeData.buff,
+            node.data.assignedNodeData.mode
+          ];
+        } else if (node.data.assignedNodeData.functionName === 'getdata') {
+          args = [
+            node.data.assignedNodeData.target,
+            node.data.assignedNodeData.id
+          ];
+        } else if (node.data.assignedNodeData.functionName === 'random') {
+          args = [
+            node.data.assignedNodeData.min,
+            node.data.assignedNodeData.max
+          ];
+        }
+        // ...other cases as needed
+
+        const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+        funcCall = `${node.data.assignedNodeData.functionName}(${formattedArgs})`;
+        assignedScript = `${assignedValue}:${funcCall}/`;
+      }
+
+      subScript += assignedScript;
+      
+      // FIX: Continue traversal for assignment nodes
+      const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+      nextEdges.forEach(edge => {
+        if (!visited.has(edge.target)) {
+          queue.push(edge.target);
+        }
+      });
+      
+      continue; // Skip the rest of the processing for assignment nodes
     }
-    // ...other cases as needed
-
-    const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-    funcCall = `${node.data.assignedNodeData.functionName}(${formattedArgs})`;
-    assignedScript = `${assignedValue}:${funcCall}/`;
-  }
-
-  subScript += assignedScript;
-  continue;
-}
-    // --- END OF INSERTED BLOCK ---
 
     if (node.type === 'ifNode') {
       subScript += `IF(${node.data.condition}):`;
@@ -523,6 +530,7 @@ function Flow() {
       subScript += `${functionCall}(${formattedArgs})/`;
     }
 
+    // FIX: This part was not being executed for assignment nodes due to the continue statement
     const nextEdges = edgeMap.get(`${node.id}-output`) || [];
     nextEdges.forEach(edge => {
       if (!visited.has(edge.target)) {
