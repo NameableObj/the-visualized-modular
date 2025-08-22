@@ -357,21 +357,24 @@ const nodeColors = useMemo(() => ({
   const paletteBgColor = isDarkMode ? '#222' : '#fafafa';
   const paletteBorderColor = isDarkMode ? '#333' : '#e0e0e0';
 
-  const expandButtonStyle = {
+ const expandButtonStyle = {
   position: 'absolute',
-  bottom: '5px',
+  bottom: '-10px',
   left: '50%',
   transform: 'translateX(-50%)',
   zIndex: 10,
-  padding: '2px 10px',
-  borderRadius: '3px',
-  border: `1px solid ${buttonBorderColor}`,
-  backgroundColor: buttonBgColor,
-  color: textColor,
+  width: '40px',
+  height: '20px',
+  borderRadius: '0 0 20px 20px',
+  border: `1px solid ${paletteBorderColor}`,
+  borderTop: 'none',
+  backgroundColor: paletteBgColor,
   cursor: 'pointer',
-  fontSize: '0.8em',
-  opacity: 0.8,
-  transition: 'opacity 0.2s',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.3s ease',
+  boxShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.1)',
 };
 
   // Helper function to apply current theme colors and specific node colors to node data
@@ -1127,10 +1130,10 @@ startEdges.forEach(edge => {
   gap: '10px',
   flexShrink: 0,
   color: textColor,
-  maxHeight: isPaletteExpanded ? '300px' : '120px', // Dynamic height
+  maxHeight: isPaletteExpanded ? '300px' : '120px',
   overflowY: 'auto',
-  position: 'relative', // For absolute positioning of the button
-  transition: 'max-height 0.3s ease-in-out', // Smooth expansion animation
+  position: 'relative',
+  transition: 'max-height 0.3s ease-in-out',
 }}>
   <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
   {filteredFunctions.map(func => (
@@ -1161,11 +1164,22 @@ startEdges.forEach(edge => {
   <button
     onClick={() => setIsPaletteExpanded(!isPaletteExpanded)}
     style={expandButtonStyle}
-    onMouseEnter={(e) => e.target.style.opacity = '1'}
-    onMouseLeave={(e) => e.target.style.opacity = '0.8'}
+    onMouseEnter={(e) => {
+      e.target.style.backgroundColor = isDarkMode ? '#2a2a2a' : '#e8e8e8';
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = paletteBgColor;
+    }}
     title={isPaletteExpanded ? 'Collapse palette' : 'Expand palette'}
   >
-    {isPaletteExpanded ? '▲ Collapse' : '▼ Expand'}
+    <span style={{
+      fontSize: '12px',
+      color: textColor,
+      transition: 'transform 0.3s ease',
+      transform: isPaletteExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
+    }}>
+      ▲
+    </span>
   </button>
   
         {hoveredFunction && (
