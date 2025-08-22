@@ -527,72 +527,6 @@ const ConsequenceNode = ({ id, data, onDataChange }) => {
   );
 };
 
-const IfNode = ({ id, data }) => {
-  const handleChange = (field) => (event) => {
-    data.onDataChange(id, { ...data, [field]: event.target.value });
-  };
-
-  return (
-    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
-      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
-      <strong>IF Statement</strong>
-      <div style={{ marginTop: '10px' }}>
-        <div>
-          Condition: 
-          <input 
-            type="text" 
-            value={data.condition || ''} 
-            onChange={handleChange('condition')} 
-            placeholder="VALUE_0=1" 
-            style={{ width: '100%', marginTop: '5px' }}
-          />
-        </div>
-        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
-          Examples: VALUE_0=1, VALUE_1{'>'}5, VALUE_2{'<'}VALUE_3, VALUE_4=VALUE_0*VALUE_0
-        </div>
-        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
-          Math ops: + - * % ! ¡ ?
-        </div>
-      </div>
-      <Handle type="source" position={Position.Right} id="true" style={{ top: '35%', background: 'green' }} />
-      <Handle type="source" position={Position.Right} id="false" style={{ top: '65%', background: 'red' }} />
-    </div>
-  );
-};
-
-// Update the ContinueIfNode component to support math operations
-const ContinueIfNode = ({ id, data }) => {
-  const handleChange = (field) => (event) => {
-    data.onDataChange(id, { ...data, [field]: event.target.value });
-  };
-
-  return (
-    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
-      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
-      <strong>CONTINUEIF</strong>
-      <div style={{ marginTop: '10px' }}>
-        <div>
-          Condition: 
-          <input 
-            type="text" 
-            value={data.condition || ''} 
-            onChange={handleChange('condition')} 
-            placeholder="VALUE_0=1" 
-            style={{ width: '100%', marginTop: '5px' }}
-          />
-        </div>
-        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
-          Stops execution if false. Examples: VALUE_0=1, VALUE_1{'>'}5, VALUE_2=VALUE_3*2
-        </div>
-        <div style={{ fontSize: '0.8em', marginTop: '5px', color: '#888' }}>
-          Math ops: + - * % ! ¡ ?
-        </div>
-      </div>
-      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
-    </div>
-  );
-};
-
 
 
 const nodeTypes = {
@@ -603,6 +537,209 @@ const nodeTypes = {
   continueIfNode: ContinueIfNode,
   assignmentNode: AssignmentNode
   
+};
+
+const IfNode = ({ id, data }) => {
+  const handleChange = (field, index = null) => (event) => {
+    if (index !== null) {
+      // Handle condition changes
+      const updatedConditions = [...data.conditions];
+      updatedConditions[index] = {
+        ...updatedConditions[index],
+        [field]: event.target.value
+      };
+      data.onDataChange(id, { ...data, conditions: updatedConditions });
+    } else {
+      // Handle other changes
+      data.onDataChange(id, { ...data, [field]: event.target.value });
+    }
+  };
+
+  const addCondition = () => {
+    const newCondition = { left: 'VALUE_0', operator: '>', right: '0' };
+    data.onDataChange(id, { 
+      ...data, 
+      conditions: [...(data.conditions || []), newCondition] 
+    });
+  };
+
+  const removeCondition = (index) => {
+    const updatedConditions = [...data.conditions];
+    updatedConditions.splice(index, 1);
+    data.onDataChange(id, { ...data, conditions: updatedConditions });
+  };
+
+  return (
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
+      <strong>IF Statement</strong>
+      <div style={{ marginTop: '10px' }}>
+        <div style={{ marginBottom: '10px' }}>
+          <select 
+            value={data.logicalOperator || 'AND'} 
+            onChange={handleChange('logicalOperator')}
+          >
+            <option value="AND">AND</option>
+            <option value="OR">OR</option>
+            <option value="XOR">XOR</option>
+          </select>
+        </div>
+        
+        {(data.conditions || []).map((condition, index) => (
+          <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+            <select 
+              value={condition.left || 'VALUE_0'} 
+              onChange={handleChange('left', index)}
+              style={{ marginRight: '5px', width: '80px' }}
+            >
+              {Array.from({ length: 10 }, (_, i) => (
+                <option key={i} value={`VALUE_${i}`}>{`VALUE_${i}`}</option>
+              ))}
+            </select>
+            
+            <select 
+              value={condition.operator || '>'} 
+              onChange={handleChange('operator', index)}
+              style={{ marginRight: '5px', width: '50px' }}
+            >
+              <option value=">">{'>'}</option>
+              <option value="<">{'<'}</option>
+              <option value="=">{'='}</option>
+              <option value="!=">{'!='}</option>
+            </select>
+            
+            <input 
+              type="text" 
+              value={condition.right || ''} 
+              onChange={handleChange('right', index)}
+              placeholder="Value" 
+              style={{ width: '60px', marginRight: '5px' }}
+            />
+            
+            <button 
+              onClick={() => removeCondition(index)}
+              style={{ background: 'red', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        
+        <button 
+          onClick={addCondition}
+          style={{ marginTop: '10px', padding: '5px 10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+        >
+          Add Condition
+        </button>
+        
+        <div style={{ fontSize: '0.8em', marginTop: '10px', color: '#888' }}>
+          Math ops: + - * % ! ¡ ?
+        </div>
+      </div>
+      <Handle type="source" position={Position.Right} id="true" style={{ top: '35%', background: 'green' }} />
+      <Handle type="source" position={Position.Right} id="false" style={{ top: '65%', background: 'red' }} />
+    </div>
+  );
+};
+
+const ContinueIfNode = ({ id, data }) => {
+  const handleChange = (field, index = null) => (event) => {
+    if (index !== null) {
+      const updatedConditions = [...data.conditions];
+      updatedConditions[index] = {
+        ...updatedConditions[index],
+        [field]: event.target.value
+      };
+      data.onDataChange(id, { ...data, conditions: updatedConditions });
+    } else {
+      data.onDataChange(id, { ...data, [field]: event.target.value });
+    }
+  };
+
+  const addCondition = () => {
+    const newCondition = { left: 'VALUE_0', operator: '>', right: '0' };
+    data.onDataChange(id, { 
+      ...data, 
+      conditions: [...(data.conditions || []), newCondition] 
+    });
+  };
+
+  const removeCondition = (index) => {
+    const updatedConditions = [...data.conditions];
+    updatedConditions.splice(index, 1);
+    data.onDataChange(id, { ...data, conditions: updatedConditions });
+  };
+
+  return (
+    <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
+      <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
+      <strong>CONTINUEIF</strong>
+      <div style={{ marginTop: '10px' }}>
+        <div style={{ marginBottom: '10px' }}>
+          <select 
+            value={data.logicalOperator || 'AND'} 
+            onChange={handleChange('logicalOperator')}
+          >
+            <option value="AND">AND</option>
+            <option value="OR">OR</option>
+            <option value="XOR">XOR</option>
+          </select>
+        </div>
+        
+        {(data.conditions || []).map((condition, index) => (
+          <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+            <select 
+              value={condition.left || 'VALUE_0'} 
+              onChange={handleChange('left', index)}
+              style={{ marginRight: '5px', width: '80px' }}
+            >
+              {Array.from({ length: 10 }, (_, i) => (
+                <option key={i} value={`VALUE_${i}`}>{`VALUE_${i}`}</option>
+              ))}
+            </select>
+            
+            <select 
+              value={condition.operator || '>'} 
+              onChange={handleChange('operator', index)}
+              style={{ marginRight: '5px', width: '50px' }}
+            >
+              <option value=">">{'>'}</option>
+              <option value="<">{'<'}</option>
+              <option value="=">{'='}</option>
+              <option value="!=">{'!='}</option>
+            </select>
+            
+            <input 
+              type="text" 
+              value={condition.right || ''} 
+              onChange={handleChange('right', index)}
+              placeholder="Value" 
+              style={{ width: '60px', marginRight: '5px' }}
+            />
+            
+            <button 
+              onClick={() => removeCondition(index)}
+              style={{ background: 'red', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        
+        <button 
+          onClick={addCondition}
+          style={{ marginTop: '10px', padding: '5px 10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+        >
+          Add Condition
+        </button>
+        
+        <div style={{ fontSize: '0.8em', marginTop: '10px', color: '#888' }}>
+          Stops execution if false. Math ops: + - * % ! ¡ ?
+        </div>
+      </div>
+      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
+    </div>
+  );
 };
 
 // --- Initial Graph Setup ---
@@ -1566,7 +1703,11 @@ const newNode = {
   id: newNodeId,
   type: nodeType,
   position,
-  data: getThemedNodeData(nodeData),
+  data: {
+    ...getThemedNodeData(functionData),
+    conditions: [],
+    logicalOperator: 'AND'
+  },
 };
 
       setNodes((nds) => nds.concat(newNode));
@@ -1685,8 +1826,68 @@ const generateScript = useCallback(() => {
             queue.push(edge.target);
           }
         });
+      } else if (node.type === 'ifNode') {
+        // Build condition string
+        let conditionStr = '';
+        if (node.data.conditions && node.data.conditions.length > 0) {
+          if (node.data.conditions.length === 1) {
+            // Single condition
+            const cond = node.data.conditions[0];
+            conditionStr = `${cond.left}${cond.operator}${cond.right}`;
+          } else {
+            // Multiple conditions with logical operator
+            conditionStr = node.data.logicalOperator || 'AND';
+            node.data.conditions.forEach(cond => {
+              conditionStr += `,${cond.left}${cond.operator}${cond.right}`;
+            });
+          }
+        }
+        
+        subScript += `IF(${conditionStr}):`;
+
+        const trueEdges = edgeMap.get(`${node.id}-true`) || [];
+        if (trueEdges.length > 0) {
+          const trueBranchScript = traverseGraph(trueEdges[0].target);
+          subScript += trueBranchScript.endsWith('/') ? trueBranchScript.slice(0, -1) : trueBranchScript;
+        }
+        
+        // Handle false branch if it exists
+        const falseEdges = edgeMap.get(`${node.id}-false`) || [];
+        if (falseEdges.length > 0) {
+          subScript += ':';
+          const falseBranchScript = traverseGraph(falseEdges[0].target);
+          subScript += falseBranchScript.endsWith('/') ? falseBranchScript.slice(0, -1) : falseBranchScript;
+        }
+        
+        subScript += '/';
+      } else if (node.type === 'continueIfNode') {
+        // Build condition string for CONTINUEIF
+        let conditionStr = '';
+        if (node.data.conditions && node.data.conditions.length > 0) {
+          if (node.data.conditions.length === 1) {
+            // Single condition
+            const cond = node.data.conditions[0];
+            conditionStr = `${cond.left}${cond.operator}${cond.right}`;
+          } else {
+            // Multiple conditions with logical operator
+            conditionStr = node.data.logicalOperator || 'AND';
+            node.data.conditions.forEach(cond => {
+              conditionStr += `,${cond.left}${cond.operator}${cond.right}`;
+            });
+          }
+        }
+        
+        subScript += `CONTINUEIF(${conditionStr})/`;
+        
+        // Continue traversal
+        const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+        nextEdges.forEach(edge => {
+          if (!visited.has(edge.target)) {
+            queue.push(edge.target);
+          }
+        });
       }
-      // Add handling for other node types here (ifNode, continueIfNode, etc.)
+      // Add handling for other node types here
     }
     return subScript;
   };
