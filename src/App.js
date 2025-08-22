@@ -1165,45 +1165,45 @@ startEdges.forEach(edge => {
 
   {/* Extruded Tab - Positioned absolutely below the palette */}
   <div
-    onClick={() => setIsPaletteExpanded(!isPaletteExpanded)}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.backgroundColor = isDarkMode ? '#2a2a2a' : '#e8e8e8';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.backgroundColor = paletteBgColor;
-    }}
-    style={{
-      position: 'absolute',
-      bottom: '-12px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: '60px',
-      height: '12px',
-      backgroundColor: paletteBgColor,
-      border: `1px solid ${paletteBorderColor}`,
-      borderTop: 'none',
-      borderRadius: '0 0 8px 8px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 10,
-      transition: 'background-color 0.2s ease',
-      boxShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.1)',
-    }}
-    title={isPaletteExpanded ? 'Collapse palette' : 'Expand palette'}
-  >
-    <div style={{
-      width: '16px',
-      height: '4px',
-      backgroundColor: textColor,
-      borderRadius: '2px',
-      opacity: 0.7,
-      transform: isPaletteExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
-      transition: 'transform 0.3s ease',
-      clipPath: isPaletteExpanded ? 'polygon(50% 0%, 0% 100%, 100% 100%)' : 'polygon(0% 0%, 100% 0%, 50% 100%)'
-    }} />
-  </div>
+  onClick={() => setIsPaletteExpanded(!isPaletteExpanded)}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.backgroundColor = isDarkMode ? '#2a2a2a' : '#e8e8e8';
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.backgroundColor = paletteBgColor;
+  }}
+  style={{
+    position: 'absolute',
+    bottom: '-18px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '100px',
+    height: '18px',
+    backgroundColor: paletteBgColor,
+    border: `1px solid ${paletteBorderColor}`,
+    borderTop: 'none',
+    borderRadius: '0 0 10px 10px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    transition: 'background-color 0.2s ease',
+    boxShadow: isDarkMode ? '0 2px 6px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.1)',
+  }}
+  title={isPaletteExpanded ? 'Collapse palette' : 'Expand palette'}
+>
+  {/* Use a proper chevron icon that changes based on state */}
+  {isPaletteExpanded ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 15L12 9L18 15" stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 9L12 15L18 9" stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )}
+</div>
   
         {hoveredFunction && (
           <div
