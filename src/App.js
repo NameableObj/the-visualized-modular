@@ -18,14 +18,61 @@ import 'reactflow/dist/style.css';
 import './App.css';
 
 // --- Custom Node Components ---
-const TimingNode = ({ data }) => (
+const TimingNode = ({ id, data }) => {
+  const handleChange = (field) => (event) => {
+    data.onDataChange(id, { ...data, [field]: event.target.value });
+  };
+
+  const handleParamChange = (paramName) => (event) => {
+    const updatedParams = { ...data.parameters, [paramName]: event.target.value };
+    data.onDataChange(id, { ...data, parameters: updatedParams });
+  };
+
+  return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} isConnectable={false} />
       <strong>{data.label}</strong>
       {data.functionName && <div style={{ fontSize: '0.8em' }}>{data.functionName}</div>}
+      
+      {/* Render parameters for parameterized timing functions */}
+      {data.hasParameters && data.parameters && (
+        <div style={{ marginTop: '10px' }}>
+          {data.functionName === 'OnSucceedAttack' || data.functionName === 'BeforeSA' || 
+           data.functionName === 'WhenHit' || data.functionName === 'BeforeWhenHit' ? (
+            <>
+              <div>
+                First Argument:
+                <select 
+                  value={data.parameters.var_1 || 'None'} 
+                  onChange={handleParamChange('var_1')}
+                  style={{ marginLeft: '5px' }}
+                >
+                  <option value="Head">Head</option>
+                  <option value="Tail">Tail</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+              <div>
+                Second Argument:
+                <select 
+                  value={data.parameters.var_2 || 'None'} 
+                  onChange={handleParamChange('var_2')}
+                  style={{ marginLeft: '5px' }}
+                >
+                  <option value="Crit">Crit</option>
+                  <option value="NoCrit">NoCrit</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
+      
       <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
-);
+  );
+};
 
 const AssignmentNode = ({ id, data }) => {
   const handleChange = (field) => (event) => {
@@ -289,13 +336,14 @@ function Flow() {
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
   // FIX: Memoized nodeColors object so it doesn't change on every render
-  const nodeColors = useMemo(() => ({
-    'Timing': isDarkMode ? '#585858' : '#d0e0ff',
-    'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
-    'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
-    'Conditional': isDarkMode ? '#8a8a4a' : '#ffffb8',
-    'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8',
-  }), [isDarkMode]); // Only recreate when isDarkMode changes
+const nodeColors = useMemo(() => ({
+  'Skill Timing': isDarkMode ? '#585858' : '#d0e0ff',
+  'Passive Timing': isDarkMode ? '#686868' : '#e0f0ff',
+  'Value Acquisition': isDarkMode ? '#4a698c' : '#a8d8ff',
+  'Consequence': isDarkMode ? '#8c4a4a' : '#ffb8b8',
+  'Conditional': isDarkMode ? '#8a8a4a' : '#ffffb8',
+  'Value Assignment': isDarkMode ? '#4a8c4a' : '#b8ffb8',
+}), [isDarkMode]);
 
   // Define colors based on mode
   const backgroundColor = isDarkMode ? '#333333' : '#ffffff';
@@ -323,8 +371,434 @@ function Flow() {
   }));
 
   const availableFunctions = [
-    { id: 'timing-roundstart', label: 'Round Start', functionName: 'RoundStart', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing, description: 'Triggers at the start of each round.' },
-    { id: 'timing-whenuse', label: 'When Use', functionName: 'WhenUse', category: 'Timing', type: 'timingNode', nodeColor: nodeColors.Timing, description: 'Triggers when this unit uses a skill.' },
+    { 
+    id: 'timing-roundstart', 
+    label: 'Round Start', 
+    functionName: 'RoundStart', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Turn Start] - Runs if the skill is in the bottom 2 slots of the dashboard' 
+  },
+  { 
+    id: 'timing-startbattle', 
+    label: 'Start Battle', 
+    functionName: 'StartBattle', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Combat Start]' 
+  },
+  { 
+    id: 'timing-endbattle', 
+    label: 'End Battle', 
+    functionName: 'EndBattle', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Turn End]' 
+  },
+  { 
+    id: 'timing-whenuse', 
+    label: 'When Use', 
+    functionName: 'WhenUse', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[On Use]' 
+  },
+  { 
+    id: 'timing-beforeattack', 
+    label: 'Before Attack', 
+    functionName: 'BeforeAttack', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Before Attack]' 
+  },
+  { 
+    id: 'timing-beforeuse', 
+    label: 'Before Use', 
+    functionName: 'BeforeUse', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Before Use]' 
+  },
+  { 
+    id: 'timing-duelclash', 
+    label: 'Duel Clash', 
+    functionName: 'DuelClash', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'Clash Count - Triggers On Each Individual Clash in a Duel (Clash)' 
+  },
+  { 
+    id: 'timing-duelclashafter', 
+    label: 'Duel Clash After', 
+    functionName: 'DuelClashAfter', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'Clash Count - Triggers On Each Individual Clash in a Duel (Clash) (Difference between this and DuelClash are unknown)' 
+  },
+  { 
+    id: 'timing-startduel', 
+    label: 'Start Duel', 
+    functionName: 'StartDuel', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Clash Start]' 
+  },
+  { 
+    id: 'timing-winduel', 
+    label: 'Win Duel', 
+    functionName: 'WinDuel', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Clash Win]' 
+  },
+  { 
+    id: 'timing-defeatduel', 
+    label: 'Defeat Duel', 
+    functionName: 'DefeatDuel', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Clash Lose]' 
+  },
+  { 
+    id: 'timing-endskill', 
+    label: 'End Skill', 
+    functionName: 'EndSkill', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[After Attack] - Bugged' 
+  },
+  { 
+    id: 'timing-onsucceedevade', 
+    label: 'On Succeed Evade', 
+    functionName: 'OnSucceedEvade', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[On Evade]' 
+  },
+  { 
+    id: 'timing-ondefeatevade', 
+    label: 'On Defeat Evade', 
+    functionName: 'OnDefeatEvade', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Failed Evade]' 
+  },
+  { 
+    id: 'timing-ondiscard', 
+    label: 'On Discard', 
+    functionName: 'OnDiscard', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '"if this Skill is Discarded" at the end of the line' 
+  },
+  { 
+    id: 'timing-beforebehaviour', 
+    label: 'Before Behaviour', 
+    functionName: 'BeforeBehaviour', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[Before Use]' 
+  },
+  { 
+    id: 'timing-onstartbehaviour', 
+    label: 'On Start Behaviour', 
+    functionName: 'OnStartBehaviour', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[On Use]' 
+  },
+  { 
+    id: 'timing-onendbehaviour', 
+    label: 'On End Behaviour', 
+    functionName: 'OnEndBehaviour', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[After Attack]' 
+  },
+  { 
+    id: 'timing-enemykill', 
+    label: 'Enemy Kill', 
+    functionName: 'EnemyKill', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: '[On Kill]' 
+  },
+  { 
+    id: 'timing-startvisualskilluse', 
+    label: 'Start Visual Skill Use', 
+    functionName: 'StartVisualSkillUse', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'Not In Vanilla - Triggers on the visual start of a Skill being used. (Used mainly for the sound consequence, with things like VFX, and dialogue lines)' 
+  },
+  { 
+    id: 'timing-startvisualcointoss', 
+    label: 'Start Visual Coin Toss', 
+    functionName: 'StartVisualCoinToss', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'Not In Vanilla - Triggers on the visual start of a Coin being tossed. (Mainly used for the sound consequence, with things like voice lines)' 
+  },
+  { 
+    id: 'timing-oncointoss', 
+    label: 'On Coin Toss', 
+    functionName: 'OnCoinToss', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'When a coin is tossed - activates each time a coin is tossed, similar to how bleed works' 
+  },
+  { 
+    id: 'timing-fakepower', 
+    label: 'Fake Power', 
+    functionName: 'FakePower', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'Prediction Phase - (Used for prediction, only for base(), final(), and clash(). Don\'t use any other consequences)' 
+  },
+
+  // Parameterized Skill Timing Functions
+  { 
+    id: 'timing-onsucceedattack', 
+    label: 'On Succeed Attack', 
+    functionName: 'OnSucceedAttack', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'No Conditions: [On Hit], Crit Condition: [On Crit], NoCrit Condition: Only if not a critical hit',
+    hasParameters: true,
+    parameters: [
+      { name: 'var_1', type: 'select', options: ['Head', 'Tail', 'None'], defaultValue: 'None', label: 'Coin Result' },
+      { name: 'var_2', type: 'select', options: ['Crit', 'None', 'NoCrit'], defaultValue: 'None', label: 'Crit Condition' }
+    ]
+  },
+  { 
+    id: 'timing-beforesa', 
+    label: 'Before SA', 
+    functionName: 'BeforeSA', 
+    category: 'Skill Timing', 
+    type: 'timingNode', 
+    description: 'Not In Vanilla - Triggers right before the hit connects',
+    hasParameters: true,
+    parameters: [
+      { name: 'var_1', type: 'select', options: ['Head', 'None', 'Tail'], defaultValue: 'None', label: 'Coin Result' },
+      { name: 'var_2', type: 'select', options: ['Crit', 'None', 'NoCrit'], defaultValue: 'None', label: 'Crit Condition' }
+    ]
+  },
+
+  // Passive Timing Functions
+  { 
+    id: 'passive-roundstart', 
+    label: 'Round Start', 
+    functionName: 'RoundStart', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Turn Start]' 
+  },
+  { 
+    id: 'passive-afterslots', 
+    label: 'After Slots', 
+    functionName: 'AfterSlots', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Turn Start] - A special RoundStart timing that triggers after Slots are formed. Used for skillslotreplace()' 
+  },
+  { 
+    id: 'passive-startbattle', 
+    label: 'Start Battle', 
+    functionName: 'StartBattle', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Combat Start]' 
+  },
+  { 
+    id: 'passive-endbattle', 
+    label: 'End Battle', 
+    functionName: 'EndBattle', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Turn End]' 
+  },
+  { 
+    id: 'passive-whenuse', 
+    label: 'When Use', 
+    functionName: 'WhenUse', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[On Use]' 
+  },
+  { 
+    id: 'passive-beforeattack', 
+    label: 'Before Attack', 
+    functionName: 'BeforeAttack', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Before Attack]' 
+  },
+  { 
+    id: 'passive-beforeuse', 
+    label: 'Before Use', 
+    functionName: 'BeforeUse', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Before Use]' 
+  },
+  { 
+    id: 'passive-duelclash', 
+    label: 'Duel Clash', 
+    functionName: 'DuelClash', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: 'Clash Count - Triggers On Each Individual Clash in a Duel (Clash)' 
+  },
+  { 
+    id: 'passive-startduel', 
+    label: 'Start Duel', 
+    functionName: 'StartDuel', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Clash Start]' 
+  },
+  { 
+    id: 'passive-winduel', 
+    label: 'Win Duel', 
+    functionName: 'WinDuel', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Clash Win]' 
+  },
+  { 
+    id: 'passive-defeatduel', 
+    label: 'Defeat Duel', 
+    functionName: 'DefeatDuel', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Clash Lose]' 
+  },
+  { 
+    id: 'passive-endskill', 
+    label: 'End Skill', 
+    functionName: 'EndSkill', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[After Attack] - Bugged' 
+  },
+  { 
+    id: 'passive-ondiscard', 
+    label: 'On Discard', 
+    functionName: 'OnDiscard', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '"if this Skill is Discarded" at the end of the line' 
+  },
+  { 
+    id: 'passive-onstartbehaviour', 
+    label: 'On Start Behaviour', 
+    functionName: 'OnStartBehaviour', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[On Use]' 
+  },
+  { 
+    id: 'passive-onendbehaviour', 
+    label: 'On End Behaviour', 
+    functionName: 'OnEndBehaviour', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[After Attack]' 
+  },
+  { 
+    id: 'passive-enemykill', 
+    label: 'Enemy Kill', 
+    functionName: 'EnemyKill', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[On Kill]' 
+  },
+  { 
+    id: 'passive-fakepower', 
+    label: 'Fake Power', 
+    functionName: 'FakePower', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: 'Prediction Phase - (Used for prediction, only for base(), final(), and clash(). Don\'t use any other consequences)' 
+  },
+  { 
+    id: 'passive-oncointoss', 
+    label: 'On Coin Toss', 
+    functionName: 'OnCoinToss', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: 'When a coin is tossed - activates each time a coin is tossed, similar to how bleed works' 
+  },
+  { 
+    id: 'passive-startbattleskill', 
+    label: 'Start Battle Skill', 
+    functionName: 'StartBattleSkill', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: 'Combat start, activates once for every skill chained - activates on combat start multiple times, the amount of times being dictated by the amount of chained skills' 
+  },
+  { 
+    id: 'passive-specialaction', 
+    label: 'Special Action', 
+    functionName: 'SpecialAction', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: 'Most Complete Certainly NOT In Vanilla - (Unique Timing triggered when you ctrl+LMB the portrait of the Unit on the dashboard, this is experimental)' 
+  },
+
+  // Parameterized Passive Timing Functions
+  { 
+    id: 'passive-onsucceedattack', 
+    label: 'On Succeed Attack', 
+    functionName: 'OnSucceedAttack', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: 'No Conditions: [On Hit], Crit Condition: [On Crit], NoCrit Condition: Only if not a critical hit',
+    hasParameters: true,
+    parameters: [
+      { name: 'var_1', type: 'select', options: ['Head', 'Tail', 'None'], defaultValue: 'None', label: 'Coin Result' },
+      { name: 'var_2', type: 'select', options: ['Crit', 'None', 'NoCrit'], defaultValue: 'None', label: 'Crit Condition' }
+    ]
+  },
+  { 
+    id: 'passive-beforesa', 
+    label: 'Before SA', 
+    functionName: 'BeforeSA', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: 'Not In Vanilla - Triggers right before the hit connects',
+    hasParameters: true,
+    parameters: [
+      { name: 'var_1', type: 'select', options: ['Head', 'None', 'Tail'], defaultValue: 'None', label: 'Coin Result' },
+      { name: 'var_2', type: 'select', options: ['Crit', 'None', 'NoCrit'], defaultValue: 'None', label: 'Crit Condition' }
+    ]
+  },
+  { 
+    id: 'passive-whenhit', 
+    label: 'When Hit', 
+    functionName: 'WhenHit', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Before Getting Hit] - (\'Target\' becomes the unit BEING HIT, \'Self\' becomes the unit who USED THE ATTACK)',
+    hasParameters: true,
+    parameters: [
+      { name: 'var_1', type: 'select', options: ['Head', 'None', 'Tail'], defaultValue: 'None', label: 'Coin Result' },
+      { name: 'var_2', type: 'select', options: ['Crit', 'None', 'NoCrit'], defaultValue: 'None', label: 'Crit Condition' }
+    ]
+  },
+  { 
+    id: 'passive-beforewhenhit', 
+    label: 'Before When Hit', 
+    functionName: 'BeforeWhenHit', 
+    category: 'Passive Timing', 
+    type: 'timingNode', 
+    description: '[Before Getting Hit] - (\'Target\' becomes the unit BEING HIT, \'Self\' becomes the unit who USED THE ATTACK)',
+    hasParameters: true,
+    parameters: [
+      { name: 'var_1', type: 'select', options: ['Head', 'None', 'Tail'], defaultValue: 'None', label: 'Coin Result' },
+      { name: 'var_2', type: 'select', options: ['Crit', 'None', 'NoCrit'], defaultValue: 'None', label: 'Crit Condition' }
+    ]
+  },
     { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Returns a buff\'s potency or turns.' },
     { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Retrieves encounter-persistent data.' },
     { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Generates a random integer.' },
@@ -354,38 +828,48 @@ function Flow() {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const onDrop = useCallback(
-    (event) => {
-      event.preventDefault();
+ const onDrop = useCallback(
+  (event) => {
+    event.preventDefault();
 
-      if (event.target.closest('.assignment-slot')) {
+    if (event.target.closest('.assignment-slot')) {
       return;
     }
 
-      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-      const transferData = JSON.parse(event.dataTransfer.getData('application/reactflow'));
+    const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+    const transferData = JSON.parse(event.dataTransfer.getData('application/reactflow'));
 
-      if (transferData) {
-        const { nodeType, functionData } = transferData;
-        const position = screenToFlowPosition({
-          x: event.clientX - reactFlowBounds.left,
-          y: event.clientY - reactFlowBounds.top,
+    if (transferData) {
+      const { nodeType, functionData } = transferData;
+      const position = screenToFlowPosition({
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      });
+
+      const newNodeId = `${nodeType}-${Date.now()}`;
+
+      // Initialize parameters for parameterized timing functions
+      let nodeData = functionData;
+      if (nodeType === 'timingNode' && functionData.hasParameters) {
+        const initialParams = {};
+        functionData.parameters.forEach(param => {
+          initialParams[param.name] = param.defaultValue;
         });
-
-        const newNodeId = `${nodeType}-${Date.now()}`;
-
-        const newNode = {
-          id: newNodeId,
-          type: nodeType,
-          position,
-          data: getThemedNodeData(functionData),
-        };
-
-        setNodes((nds) => nds.concat(newNode));
+        nodeData = { ...functionData, parameters: initialParams };
       }
-    },
-    [screenToFlowPosition, setNodes, getThemedNodeData],
-  );
+
+      const newNode = {
+        id: newNodeId,
+        type: nodeType,
+        position,
+        data: getThemedNodeData(nodeData),
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+    }
+  },
+  [screenToFlowPosition, setNodes, getThemedNodeData],
+);
 
   const handleMouseEnter = useCallback((event, func) => {
     setHoveredFunction(func);
@@ -409,11 +893,14 @@ function Flow() {
     });
 
     const timingNode = nodes.find(node => node.type === 'timingNode');
-    if (!timingNode) {
-      setGeneratedScript("Needs to start with a timing node goober");
-      setShowExportModal(true);
-      return;
-    }
+    if (node.type === 'timingNode') {
+  if (node.data.hasParameters && node.data.parameters) {
+    const params = Object.values(node.data.parameters).join(',');
+    script += `TIMING:${node.data.functionName}(${params})/`;
+  } else {
+    script += `TIMING:${node.data.functionName}/`;
+  }
+}
 
     script += `TIMING:${timingNode.data.functionName}/`;
 
@@ -574,11 +1061,23 @@ startEdges.forEach(edge => {
 
         {/* Category Filter Buttons */}
         <div style={{ display: 'flex', gap: '5px' }}>
-           {['All', 'Timing', 'Value Acquisition', 'Consequence', 'Conditional', 'Value Assignment'].map(category => (
-           <button key={category} onClick={() => setActiveCategory(category)} style={{ padding: '6px 12px', borderRadius: '5px', border: `1px solid ${buttonBorderColor}`, background: activeCategory === category ? (isDarkMode ? '#555' : '#ddd') : buttonBgColor, color: textColor, cursor: 'pointer', fontSize: '0.9em' }}>
-               {category}
-           </button>
-         ))}
+           {['All', 'Skill Timing', 'Passive Timing', 'Value Acquisition', 'Consequence', 'Conditional', 'Value Assignment'].map(category => (
+  <button 
+    key={category} 
+    onClick={() => setActiveCategory(category)} 
+    style={{ 
+      padding: '6px 12px', 
+      borderRadius: '5px', 
+      border: `1px solid ${buttonBorderColor}`, 
+      background: activeCategory === category ? (isDarkMode ? '#555' : '#ddd') : buttonBgColor, 
+      color: textColor, 
+      cursor: 'pointer', 
+      fontSize: '0.9em' 
+    }}
+  >
+    {category}
+  </button>
+))}
         </div>
 
         {/* Search Bar */}
