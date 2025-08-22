@@ -29,7 +29,6 @@ const TimingNode = ({ id, data }) => {
 };
 
 
-
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} isConnectable={false} />
@@ -338,23 +337,6 @@ function Flow() {
 
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
 
-  const expandButtonStyle = {
-  position: 'absolute',
-  bottom: '5px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 10,
-  padding: '2px 10px',
-  borderRadius: '3px',
-  border: `1px solid ${buttonBorderColor}`,
-  backgroundColor: buttonBgColor,
-  color: textColor,
-  cursor: 'pointer',
-  fontSize: '0.8em',
-  opacity: 0.8,
-  transition: 'opacity 0.2s',
-};
-
   // FIX: Memoized nodeColors object so it doesn't change on every render
 const nodeColors = useMemo(() => ({
   'Skill Timing': isDarkMode ? '#585858' : '#d0e0ff',
@@ -374,6 +356,23 @@ const nodeColors = useMemo(() => ({
   const buttonBorderColor = isDarkMode ? '#555' : '#ccc';
   const paletteBgColor = isDarkMode ? '#222' : '#fafafa';
   const paletteBorderColor = isDarkMode ? '#333' : '#e0e0e0';
+
+  const expandButtonStyle = {
+  position: 'absolute',
+  bottom: '5px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 10,
+  padding: '2px 10px',
+  borderRadius: '3px',
+  border: `1px solid ${buttonBorderColor}`,
+  backgroundColor: buttonBgColor,
+  color: textColor,
+  cursor: 'pointer',
+  fontSize: '0.8em',
+  opacity: 0.8,
+  transition: 'opacity 0.2s',
+};
 
   // Helper function to apply current theme colors and specific node colors to node data
   // FIX: Ensured dependencies are correct for useCallback
@@ -1168,7 +1167,7 @@ startEdges.forEach(edge => {
   >
     {isPaletteExpanded ? '▲ Collapse' : '▼ Expand'}
   </button>
-
+  
         {hoveredFunction && (
           <div
             style={{
