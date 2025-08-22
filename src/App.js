@@ -333,39 +333,96 @@ const renderEmbeddedNode = () => {
         </label>
       </div>
 
-      <div
-        className="assignment-slot"
-        onDrop={event => {
-          event.preventDefault();
-          event.stopPropagation();
-          const transfer = event.dataTransfer.getData('application/reactflow');
-          if (transfer) {
-            const { nodeType, functionData } = JSON.parse(transfer);
-            if (nodeType === 'valueAcquisitionNode') {
-              data.onDataChange(id, { 
-                ...data, 
-                assignedNodeData: functionData 
-              });
-            }
-          }
-        }}
-        onDragOver={e => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        style={{
-          border: '2px dashed #888',
-          padding: '10px',
-          margin: '10px 0',
-          borderRadius: '5px',
-          background: data.assignedNodeData ? '#e0ffe0' : 'rgba(0,0,0,0.05)',
-          minHeight: '50px',
-        }}
-      >
-        {data.assignedNodeData ? renderEmbeddedNode() : 'Drop a value node here'}
-      </div>
+<div
+  className="assignment-slot"
+  onDrop={event => {
+    event.preventDefault();
+    event.stopPropagation();
+    const transfer = event.dataTransfer.getData('application/reactflow');
+    if (transfer) {
+      const { nodeType, functionData } = JSON.parse(transfer);
+      if (nodeType === 'valueAcquisitionNode') {
+        // Initialize with default parameters based on function type
+        let defaultParams = {};
+        
+        switch(functionData.functionName) {
+          case 'hpcheck':
+            defaultParams = { target: '', mode: 'normal' };
+            break;
+          case 'mpcheck':
+            defaultParams = { target: '' };
+            break;
+          case 'bufcheck':
+            defaultParams = { target: '', buff: '', mode: 'stack' };
+            break;
+          case 'getdata':
+            defaultParams = { target: '', id: '' };
+            break;
+          case 'random':
+            defaultParams = { min: '', max: '' };
+            break;
+          case 'unitstate':
+            defaultParams = { target: '' };
+            break;
+          case 'getid':
+            defaultParams = { target: '' };
+            break;
+          case 'getcharacterid':
+            defaultParams = { target: '' };
+            break;
+          case 'instid':
+            defaultParams = { target: '' };
+            break;
+          case 'speedcheck':
+            defaultParams = { target: '', slot: '' };
+            break;
+          case 'getpattern':
+            defaultParams = { target: '' };
+            break;
+          case 'deadallies':
+            defaultParams = { target: '' };
+            break;
+          case 'getshield':
+            defaultParams = { target: '' };
+            break;
+          case 'areallied':
+            defaultParams = { target1: '', target2: '' };
+            break;
+          case 'getcoincount':
+            defaultParams = { target: 'Self', type: 'cur' };
+            break;
+          case 'allcoinstate':
+            defaultParams = { target: 'Self', type: 'full' };
+            break;
+          // Add more function types as needed
+          default:
+            defaultParams = {};
+        }
+        
+        data.onDataChange(id, { 
+          ...data, 
+          assignedNodeData: { ...functionData, ...defaultParams } 
+        });
+      }
+    }
+  }}
+  onDragOver={e => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  style={{
+    border: '2px dashed #888',
+    padding: '10px',
+    margin: '10px 0',
+    borderRadius: '5px',
+    background: data.assignedNodeData ? '#e0ffe0' : 'rgba(0,0,0,0.05)',
+    minHeight: '50px',
+  }}
+>
+  {data.assignedNodeData ? renderEmbeddedNode() : 'Drop a value node here'}
+</div>
 
-      <Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
+<Handle type="source" position={Position.Right} id="output" style={{ background: data.textColor }} />
     </div>
   );
 };
@@ -1503,63 +1560,64 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
   let funcCall = '';
   let args = [];
   const funcName = node.data.assignedNodeData.functionName;
+  const funcData = node.data.assignedNodeData;
   
-   if (funcName === 'hpcheck') {
+  if (funcName === 'hpcheck') {
     args = [
-      node.data.assignedNodeData.target,
-      node.data.assignedNodeData.mode
+      funcData.target || '',
+      funcData.mode || 'normal'
     ];
   } else if (funcName === 'mpcheck') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'bufcheck') {
     args = [
-      node.data.assignedNodeData.target,
-      node.data.assignedNodeData.buff,
-      node.data.assignedNodeData.mode
+      funcData.target || '',
+      funcData.buff || '',
+      funcData.mode || 'stack'
     ];
   } else if (funcName === 'getdata') {
     args = [
-      node.data.assignedNodeData.target,
-      node.data.assignedNodeData.id
+      funcData.target || '',
+      funcData.id || ''
     ];
   } else if (funcName === 'random') {
     args = [
-      node.data.assignedNodeData.min,
-      node.data.assignedNodeData.max
+      funcData.min || '',
+      funcData.max || ''
     ];
   } else if (funcName === 'unitstate') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'getid') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'getcharacterid') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'instid') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'speedcheck') {
     args = [
-      node.data.assignedNodeData.target,
-      node.data.assignedNodeData.slot || ''
+      funcData.target || '',
+      funcData.slot || ''
     ].filter(arg => arg !== '');
   } else if (funcName === 'getpattern') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'deadallies') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'getshield') {
-    args = [node.data.assignedNodeData.target];
+    args = [funcData.target || ''];
   } else if (funcName === 'areallied') {
     args = [
-      node.data.assignedNodeData.target1,
-      node.data.assignedNodeData.target2
+      funcData.target1 || '',
+      funcData.target2 || ''
     ];
   } else if (funcName === 'getcoincount') {
     args = [
-      node.data.assignedNodeData.target,
-      node.data.assignedNodeData.type
+      funcData.target || 'Self',
+      funcData.type || 'cur'
     ];
   } else if (funcName === 'allcoinstate') {
     args = [
-      node.data.assignedNodeData.target,
-      node.data.assignedNodeData.type
+      funcData.target || 'Self',
+      funcData.type || 'full'
     ];
   } else {
     // For functions without parameters
@@ -1573,6 +1631,7 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
   
   assignedScript = `${assignedValue}:${funcCall}/`;
 }
+
 
       subScript += assignedScript;
       
