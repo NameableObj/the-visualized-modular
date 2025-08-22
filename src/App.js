@@ -24,9 +24,9 @@ const TimingNode = ({ id, data }) => {
   };
 
   const handleParamChange = (paramName) => (event) => {
-    const updatedParams = { ...data.parameters, [paramName]: event.target.value };
-    data.onDataChange(id, { ...data, parameters: updatedParams });
-  };
+  const updatedParams = { ...(data.parameters || {}), [paramName]: event.target.value };
+  data.onDataChange(id, { ...data, parameters: updatedParams });
+};
 
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
@@ -849,21 +849,27 @@ const nodeColors = useMemo(() => ({
       const newNodeId = `${nodeType}-${Date.now()}`;
 
       // Initialize parameters for parameterized timing functions
-      let nodeData = functionData;
-      if (nodeType === 'timingNode' && functionData.hasParameters) {
-        const initialParams = {};
-        functionData.parameters.forEach(param => {
-          initialParams[param.name] = param.defaultValue;
-        });
-        nodeData = { ...functionData, parameters: initialParams };
-      }
+      let nodeData = {...functionData};
+if (nodeType === 'timingNode' && functionData.hasParameters) {
+  const initialParams = {};
+  if (functionData.parameters) {
+    functionData.parameters.forEach(param => {
+      initialParams[param.name] = param.defaultValue;
+    });
+  }
+  nodeData = { 
+    ...functionData, 
+    parameters: initialParams,
+    hasParameters: true 
+  };
+}
 
-      const newNode = {
-        id: newNodeId,
-        type: nodeType,
-        position,
-        data: getThemedNodeData(nodeData),
-      };
+const newNode = {
+  id: newNodeId,
+  type: nodeType,
+  position,
+  data: getThemedNodeData(nodeData),
+};
 
       setNodes((nds) => nds.concat(newNode));
     }
@@ -892,17 +898,20 @@ const nodeColors = useMemo(() => ({
       edgeMap.get(sourceKey).push(edge);
     });
 
-    const timingNode = nodes.find(node => node.type === 'timingNode');
-    if (nodes.type === 'timingNode') {
-  if (nodes.data.hasParameters && nodes.data.parameters) {
-    const params = Object.values(nodes.data.parameters).join(',');
-    script += `TIMING:${nodes.data.functionName}(${params})/`;
-  } else {
-    script += `TIMING:${nodes.data.functionName}/`;
-  }
+   const timingNode = nodes.find(node => node.type === 'timingNode');
+if (!timingNode) {
+  setGeneratedScript("Needs to start with a timing node goober");
+  setShowExportModal(true);
+  return;
 }
 
-    script += `TIMING:${timingNode.data.functionName}/`;
+// Handle parameterized timing functions
+if (timingNode.data.hasParameters && timingNode.data.parameters) {
+  const params = Object.values(timingNode.data.parameters).join(',');
+  script += `TIMING:${timingNode.data.functionName}(${params})/`;
+} else {
+  script += `TIMING:${timingNode.data.functionName}/`;
+}
 
     const generatedVariables = new Map();
     let variableCounter = 0;
