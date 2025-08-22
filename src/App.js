@@ -28,6 +28,25 @@ const TimingNode = ({ id, data }) => {
   data.onDataChange(id, { ...data, parameters: updatedParams });
 };
 
+const [isPaletteExpanded, setIsPaletteExpanded] = useState(false);
+
+const expandButtonStyle = {
+  position: 'absolute',
+  bottom: '5px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 10,
+  padding: '2px 10px',
+  borderRadius: '3px',
+  border: `1px solid ${buttonBorderColor}`,
+  backgroundColor: buttonBgColor,
+  color: textColor,
+  cursor: 'pointer',
+  fontSize: '0.8em',
+  opacity: 0.8,
+  transition: 'opacity 0.2s',
+};
+
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} isConnectable={false} />
@@ -563,7 +582,7 @@ const nodeColors = useMemo(() => ({
     functionName: 'OnSucceedAttack', 
     category: 'Skill Timing', 
     type: 'timingNode', 
-    description: 'No Conditions: [On Hit], Crit Condition: [On Crit], NoCrit Condition: Only if not a critical hit',
+    description: 'var_1: Head/Tail/None (Only on heads, only on tails, or no condition.) var_2: Crit/None/NoCrit (Only on crit, or only when not a crit)',
     hasParameters: true,
     parameters: [
       { name: 'var_1', type: 'select', options: ['Head', 'Tail', 'None'], defaultValue: 'None', label: 'Coin Result' },
@@ -576,7 +595,7 @@ const nodeColors = useMemo(() => ({
     functionName: 'BeforeSA', 
     category: 'Skill Timing', 
     type: 'timingNode', 
-    description: 'Not In Vanilla - Triggers right before the hit connects',
+    description: 'Triggers right before the hit connects. var_1: Head/Tail/None (Only on heads, only on tails, or no condition.) var_2: Crit/None/NoCrit (Only on crit, or only when not a crit)',
     hasParameters: true,
     parameters: [
       { name: 'var_1', type: 'select', options: ['Head', 'None', 'Tail'], defaultValue: 'None', label: 'Coin Result' },
@@ -1100,42 +1119,55 @@ startEdges.forEach(edge => {
 
       {/* --- Draggable Functions Palette --- */}
       <div style={{
-        backgroundColor: paletteBgColor,
-        borderBottom: `1px solid ${paletteBorderColor}`,
-        padding: '10px 20px',
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '10px',
-        flexShrink: 0,
-        color: textColor,
-        maxHeight: '120px',
-        overflowY: 'auto',
-        position: 'relative',
-      }}>
-        <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
-        {filteredFunctions.map(func => (
-  <div
-    key={func.id}
-    className="dnd-node-palette"
-    draggable
-    onDragStart={(event) => onDragStart(event, func.type, func)}
-    onMouseEnter={(event) => handleMouseEnter(event, func)}
-    onMouseLeave={handleMouseLeave}
-    style={{
-      padding: '8px 15px',
-      borderRadius: '5px',
-      border: `1px solid ${getThemedNodeData(func).borderColor}`,
-      background: getThemedNodeData(func).nodeColor,
-      color: getThemedNodeData(func).textColor,
-      cursor: 'grab',
-      fontSize: '0.9em',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      whiteSpace: 'nowrap',
-    }}
+  backgroundColor: paletteBgColor,
+  borderBottom: `1px solid ${paletteBorderColor}`,
+  padding: '10px 20px',
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '10px',
+  flexShrink: 0,
+  color: textColor,
+  maxHeight: isPaletteExpanded ? '300px' : '120px', // Dynamic height
+  overflowY: 'auto',
+  position: 'relative', // For absolute positioning of the button
+  transition: 'max-height 0.3s ease-in-out', // Smooth expansion animation
+}}>
+         <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
+  {filteredFunctions.map(func => (
+    <div
+      key={func.id}
+      className="dnd-node-palette"
+      draggable
+      onDragStart={(event) => onDragStart(event, func.type, func)}
+      onMouseEnter={(event) => handleMouseEnter(event, func)}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        padding: '8px 15px',
+        borderRadius: '5px',
+        border: `1px solid ${getThemedNodeData(func).borderColor}`,
+        background: getThemedNodeData(func).nodeColor,
+        color: getThemedNodeData(func).textColor,
+        cursor: 'grab',
+        fontSize: '0.9em',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        whiteSpace: 'nowrap',
+      }}
   >
     {func.label} ({func.functionName})
-  </div>
-))}
+    </div>
+  ))}
+
+  {/* Expand/Collapse Button */}
+  <button
+    onClick={() => setIsPaletteExpanded(!isPaletteExpanded)}
+    style={expandButtonStyle}
+    onMouseEnter={(e) => e.target.style.opacity = '1'}
+    onMouseLeave={(e) => e.target.style.opacity = '0.8'}
+    title={isPaletteExpanded ? 'Collapse palette' : 'Expand palette'}
+  >
+    {isPaletteExpanded ? '▲ Collapse' : '▼ Expand'}
+  </button>
+  
         {hoveredFunction && (
           <div
             style={{
