@@ -92,141 +92,223 @@ const AssignmentNode = ({ id, data }) => {
   };
 
  // Render the embedded value node with appropriate inputs
-  const renderEmbeddedNode = () => {
-    if (!data.assignedNodeData) return null;
-    
-    const funcData = data.assignedNodeData;
-    const funcName = funcData.functionName;
+const renderEmbeddedNode = () => {
+  if (!data.assignedNodeData) return null;
+  
+  const funcData = data.assignedNodeData;
+  const funcName = funcData.functionName;
 
-    return (
-      <div style={{
-        padding: '8px',
-        background: funcData.nodeColor,
-        borderRadius: '3px',
-        margin: '4px 0',
-        color: funcData.textColor
-      }}>
-        <strong>{funcData.label}</strong>
-        {funcData.functionName && <div style={{ fontSize: '0.8em' }}>{funcData.functionName}</div>}
-        
-        {/* Dynamic input fields based on function type */}
-        {funcName === 'bufcheck' && (
-          <>
-            <div>Target: <input type="text" value={funcData.target || ''} 
-              onChange={e => updateEmbeddedData('target', e.target.value)} 
-              placeholder="Self, Target..." />
-            </div>
-            <div>Buff: <input type="text" value={funcData.buff || ''} 
-              onChange={e => updateEmbeddedData('buff', e.target.value)}
-              placeholder="Keyword" />
-            </div>
-            <div>Mode: 
-              <select value={funcData.mode || 'stack'}
-                onChange={e => updateEmbeddedData('mode', e.target.value)}>
-                <option value="stack">stack</option>
-                <option value="turn">turn</option>
-                <option value="+">+</option>
-                <option value="*">*</option>
-                <option value="consumed">consumed</option>
-              </select>
-            </div>
-          </>
-        )}
-        
-        {funcName === 'getdata' && (
-          <>
-            <div>Target: <input type="text" value={funcData.target || ''} 
-              onChange={e => updateEmbeddedData('target', e.target.value)} 
-              placeholder="Self, Target..." />
-            </div>
-            <div>ID: <input type="text" value={funcData.id || ''} 
-              onChange={e => updateEmbeddedData('id', e.target.value)}
-              placeholder="Data ID" />
-            </div>
-          </>
-        )}
-        
-        {funcName === 'random' && (
-          <>
-            <div>Min: <input type="number" value={funcData.min || ''} 
-              onChange={e => updateEmbeddedData('min', e.target.value)} 
-              placeholder="Min" />
-            </div>
-            <div>Max: <input type="number" value={funcData.max || ''} 
-              onChange={e => updateEmbeddedData('max', e.target.value)}
-              placeholder="Max" />
-            </div>
-          </>
-        )}
-        
-        {funcName === 'hpcheck' && (
-          <>
-            <div>Target: <input type="text" value={funcData.target || ''} 
-              onChange={e => updateEmbeddedData('target', e.target.value)} 
-              placeholder="Self, Target..." />
-            </div>
-            <div>Mode: 
-              <select value={funcData.mode || 'normal'}
-                onChange={e => updateEmbeddedData('mode', e.target.value)}>
-                <option value="normal">normal</option>
-                <option value="%">%</option>
-                <option value="max">max</option>
-                <option value="missing">missing</option>
-                <option value="missing%">missing%</option>
-              </select>
-            </div>
-          </>
-        )}
-        
-        {funcName === 'mpcheck' && (
+  return (
+    <div style={{
+      padding: '8px',
+      background: funcData.nodeColor,
+      borderRadius: '3px',
+      margin: '4px 0',
+      color: funcData.textColor
+    }}>
+      <strong>{funcData.label}</strong>
+      {funcData.functionName && <div style={{ fontSize: '0.8em' }}>{funcData.functionName}</div>}
+      
+      {/* Dynamic input fields based on function type */}
+      {funcName === 'hpcheck' && (
+        <>
           <div>Target: <input type="text" value={funcData.target || ''} 
             onChange={e => updateEmbeddedData('target', e.target.value)} 
             placeholder="Self, Target..." />
           </div>
-        )}
-        
-        {funcName === 'unitstate' && (
+          <div>Mode: 
+            <select value={funcData.mode || 'normal'}
+              onChange={e => updateEmbeddedData('mode', e.target.value)}>
+              <option value="normal">normal (HP)</option>
+              <option value="%">% (HP%)</option>
+              <option value="max">max (Max HP)</option>
+              <option value="missing">missing (Missing HP)</option>
+              <option value="missing%">missing% (Missing HP%)</option>
+            </select>
+          </div>
+        </>
+      )}
+      
+      {funcName === 'mpcheck' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'bufcheck' && (
+        <>
           <div>Target: <input type="text" value={funcData.target || ''} 
             onChange={e => updateEmbeddedData('target', e.target.value)} 
             placeholder="Self, Target..." />
           </div>
-        )}
-        
-        {funcName === 'getid' && (
+          <div>Buff: <input type="text" value={funcData.buff || ''} 
+            onChange={e => updateEmbeddedData('buff', e.target.value)}
+            placeholder="Keyword" />
+          </div>
+          <div>Mode: 
+            <select value={funcData.mode || 'stack'}
+              onChange={e => updateEmbeddedData('mode', e.target.value)}>
+              <option value="stack">stack (Potency)</option>
+              <option value="turn">turn (Turns)</option>
+              <option value="+">+ (Potency + Turns)</option>
+              <option value="*">* (Potency × Turns)</option>
+              <option value="consumed">consumed (Amount used)</option>
+            </select>
+          </div>
+        </>
+      )}
+      
+      {funcName === 'getdata' && (
+        <>
           <div>Target: <input type="text" value={funcData.target || ''} 
             onChange={e => updateEmbeddedData('target', e.target.value)} 
             placeholder="Self, Target..." />
           </div>
-        )}
-        
-        {funcName === 'speedcheck' && (
-          <>
-            <div>Target: <input type="text" value={funcData.target || ''} 
-              onChange={e => updateEmbeddedData('target', e.target.value)} 
-              placeholder="Self, Target..." />
-            </div>
-            <div>Slot: <input type="number" value={funcData.slot || ''} 
-              onChange={e => updateEmbeddedData('slot', e.target.value)}
-              placeholder="Slot index (optional)" />
-            </div>
-          </>
-        )}
-        
-        {funcName === 'getshield' && (
+          <div>ID: <input type="text" value={funcData.id || ''} 
+            onChange={e => updateEmbeddedData('id', e.target.value)}
+            placeholder="Data ID" />
+          </div>
+        </>
+      )}
+      
+      {funcName === 'random' && (
+        <>
+          <div>Min: <input type="number" value={funcData.min || ''} 
+            onChange={e => updateEmbeddedData('min', e.target.value)} 
+            placeholder="Min" />
+          </div>
+          <div>Max: <input type="number" value={funcData.max || ''} 
+            onChange={e => updateEmbeddedData('max', e.target.value)}
+            placeholder="Max" />
+          </div>
+        </>
+      )}
+      
+      {funcName === 'unitstate' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'getid' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'getcharacterid' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'instid' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'speedcheck' && (
+        <>
           <div>Target: <input type="text" value={funcData.target || ''} 
             onChange={e => updateEmbeddedData('target', e.target.value)} 
             placeholder="Self, Target..." />
           </div>
-        )}
-        
-        {/* Add more function types as needed */}
-        
-        {!['bufcheck', 'getdata', 'random', 'hpcheck', 'mpcheck', 'unitstate', 'getid', 'speedcheck', 'getshield'].includes(funcName) && (
-          <div>Parameters: This function type doesn't have specialized input fields yet.</div>
-        )}
-      </div>
-    );
-  };
+          <div>Slot: <input type="number" value={funcData.slot || ''} 
+            onChange={e => updateEmbeddedData('slot', e.target.value)}
+            placeholder="Slot index (optional)" />
+          </div>
+        </>
+      )}
+      
+      {funcName === 'getpattern' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'deadallies' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'getshield' && (
+        <div>Target: <input type="text" value={funcData.target || ''} 
+          onChange={e => updateEmbeddedData('target', e.target.value)} 
+          placeholder="Self, Target..." />
+        </div>
+      )}
+      
+      {funcName === 'areallied' && (
+        <>
+          <div>Target 1: <input type="text" value={funcData.target1 || ''} 
+            onChange={e => updateEmbeddedData('target1', e.target.value)} 
+            placeholder="Self, Target..." />
+          </div>
+          <div>Target 2: <input type="text" value={funcData.target2 || ''} 
+            onChange={e => updateEmbeddedData('target2', e.target.value)} 
+            placeholder="Self, Target..." />
+          </div>
+        </>
+      )}
+      
+      {funcName === 'getcoincount' && (
+        <>
+          <div>Target: 
+            <select value={funcData.target || 'Self'}
+              onChange={e => updateEmbeddedData('target', e.target.value)}>
+              <option value="Self">Self</option>
+              <option value="Target">Target</option>
+            </select>
+          </div>
+          <div>Type: 
+            <select value={funcData.type || 'cur'}
+              onChange={e => updateEmbeddedData('type', e.target.value)}>
+              <option value="cur">cur (Current)</option>
+              <option value="og">og (Original)</option>
+            </select>
+          </div>
+        </>
+      )}
+      
+      {funcName === 'allcoinstate' && (
+        <>
+          <div>Target: 
+            <select value={funcData.target || 'Self'}
+              onChange={e => updateEmbeddedData('target', e.target.value)}>
+              <option value="Self">Self</option>
+              <option value="Target">Target</option>
+            </select>
+          </div>
+          <div>Type: 
+            <select value={funcData.type || 'full'}
+              onChange={e => updateEmbeddedData('type', e.target.value)}>
+              <option value="full">full (All same)</option>
+              <option value="headcount">headcount (Heads count)</option>
+              <option value="tailcount">tailcount (Tails count)</option>
+            </select>
+          </div>
+        </>
+      )}
+      
+      {/* Add more function types as needed */}
+      
+      {!['hpcheck', 'mpcheck', 'bufcheck', 'getdata', 'random', 'unitstate', 
+          'getid', 'getcharacterid', 'instid', 'speedcheck', 'getpattern', 
+          'deadallies', 'getshield', 'areallied', 'getcoincount', 'allcoinstate'].includes(funcName) && (
+        <div>This function doesn't require additional parameters or specialized input fields.</div>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="custom-node" style={{ 
@@ -925,15 +1007,366 @@ const nodeColors = useMemo(() => ({
       { name: 'var_2', type: 'select', options: ['Crit', 'None', 'NoCrit'], defaultValue: 'None', label: 'Crit Condition' }
     ]
   },
-    { id: 'value-bufcheck', label: 'Buff Check', functionName: 'bufcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Returns a buff\'s potency or turns.' },
-    { id: 'value-getdata', label: 'Get Data', functionName: 'getdata', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Retrieves encounter-persistent data.' },
-    { id: 'value-random', label: 'Random Number', functionName: 'random', category: 'Value Acquisition', type: 'valueAcquisitionNode', nodeColor: nodeColors['Value Acquisition'], description: 'Generates a random integer.' },
-    { id: 'value-hpcheck', label: 'HP Check', functionName: 'hpcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Gets HP value based on arguments' },
-{ id: 'value-mpcheck', label: 'SP Check', functionName: 'mpcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Gets SP value' },
-{ id: 'value-unitstate', label: 'Unit State', functionName: 'unitstate', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns unit state (-1=doesn\'t exist, 0=dead, 1=alive, 2=staggered)' },
-{ id: 'value-getid', label: 'Get ID', functionName: 'getid', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns the unit ID of the target' },
-{ id: 'value-speedcheck', label: 'Speed Check', functionName: 'speedcheck', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns the speed of the target' },
-{ id: 'value-getshield', label: 'Get Shield', functionName: 'getshield', category: 'Value Acquisition', type: 'valueAcquisitionNode', description: 'Returns the amount of shield on target' },
+     { 
+    id: 'value-hpcheck', 
+    label: 'HP Check', 
+    functionName: 'hpcheck', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Gets HP value. Args: Target, Mode (normal=HP, %=HP%, max=MaxHP, missing=MissingHP, missing%=MissingHP%)' 
+  },
+  { 
+    id: 'value-mpcheck', 
+    label: 'SP Check', 
+    functionName: 'mpcheck', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Gets SP value. Args: Target' 
+  },
+  { 
+    id: 'value-bufcheck', 
+    label: 'Buff Check', 
+    functionName: 'bufcheck', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns buff info. Args: Target, Buff keyword, Mode (stack=potency, turn=turns, +=sum, *=product, consumed=amount used)' 
+  },
+  { 
+    id: 'value-getdmg', 
+    label: 'Get Damage', 
+    functionName: 'getdmg', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns damage amount. Only works with OnSucceedAttack and WhenHit timings. No arguments.' 
+  },
+  { 
+    id: 'value-round', 
+    label: 'Get Round', 
+    functionName: 'round', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns current round number. No arguments.' 
+  },
+  { 
+    id: 'value-wave', 
+    label: 'Get Wave', 
+    functionName: 'wave', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns current wave number. No arguments.' 
+  },
+  { 
+    id: 'value-activations', 
+    label: 'Get Activations', 
+    functionName: 'activations', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns how many times this script has been triggered. No arguments.' 
+  },
+  { 
+    id: 'value-unitstate', 
+    label: 'Unit State', 
+    functionName: 'unitstate', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns unit state. Args: Target (-1=doesn\'t exist, 0=dead, 1=alive, 2=staggered)' 
+  },
+  { 
+    id: 'value-getid', 
+    label: 'Get Unit ID', 
+    functionName: 'getid', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns unit ID. Args: Target' 
+  },
+  { 
+    id: 'value-getcharacterid', 
+    label: 'Get Character ID', 
+    functionName: 'getcharacterid', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns character ID (Sinners only). Args: Target' 
+  },
+  { 
+    id: 'value-instid', 
+    label: 'Get Instance ID', 
+    functionName: 'instid', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns unique instance ID. Args: Target' 
+  },
+  { 
+    id: 'value-speedcheck', 
+    label: 'Speed Check', 
+    functionName: 'speedcheck', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns speed. Args: Target, [Optional] Slot index' 
+  },
+  { 
+    id: 'value-getpattern', 
+    label: 'Get Pattern', 
+    functionName: 'getpattern', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns pattern index. Args: Target' 
+  },
+  { 
+    id: 'value-getdata', 
+    label: 'Get Data', 
+    functionName: 'getdata', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Gets encounter-persistent data. Args: Target, Data ID' 
+  },
+  { 
+    id: 'value-deadallies', 
+    label: 'Dead Allies', 
+    functionName: 'deadallies', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Gets number of target\'s dead allies. Args: Target' 
+  },
+  { 
+    id: 'value-random', 
+    label: 'Random Number', 
+    functionName: 'random', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns random integer. Args: Min value, Max value' 
+  },
+  { 
+    id: 'value-getshield', 
+    label: 'Get Shield', 
+    functionName: 'getshield', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns shield amount. Args: Target' 
+  },
+  { 
+    id: 'value-areallied', 
+    label: 'Are Allied', 
+    functionName: 'areallied', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns if units are allied. Args: Target 1, Target 2' 
+  },
+  { 
+    id: 'value-getskillid', 
+    label: 'Get Skill ID', 
+    functionName: 'getskillid', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns skill ID being used. Only works with skill-related timings. No arguments.' 
+  },
+  { 
+    id: 'value-getcoincount', 
+    label: 'Get Coin Count', 
+    functionName: 'getcoincount', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Gets coin count. Args: Self/Target, Type (cur=current, og=original)' 
+  },
+  { 
+    id: 'value-allcoinstate', 
+    label: 'All Coin State', 
+    functionName: 'allcoinstate', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns coin states. Args: Self/Target, Type (full=all same, headcount=heads, tailcount=tails)' 
+  },
+  { 
+    id: 'value-resonance', 
+    label: 'Resonance', 
+    functionName: 'resonance', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns resonance. Args: Type (highres, highperfect, or specific sin like AZURE)' 
+  },
+  { 
+    id: 'value-resource', 
+    label: 'Resource', 
+    functionName: 'resource', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns sin resources. Args: Sin type (CRIMSON, SCARLET, etc.), [Optional] Enemy' 
+  },
+  { 
+    id: 'value-haskey', 
+    label: 'Has Keyword', 
+    functionName: 'haskey', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns if unit has keyword. Args: Target, Logic (AND/OR), Keyword(s) comma separated' 
+  },
+  { 
+    id: 'value-skillbase', 
+    label: 'Skill Base', 
+    functionName: 'skillbase', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns skill base power. Args: Self/Target' 
+  },
+  { 
+    id: 'value-skillatkweight', 
+    label: 'Skill ATK Weight', 
+    functionName: 'skillatkweight', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns attack weight. Args: Self/Target' 
+  },
+  { 
+    id: 'value-onescale', 
+    label: 'One Scale', 
+    functionName: 'onescale', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns coin power. Args: Self/Target, Coin index' 
+  },
+  { 
+    id: 'value-skillatklevel', 
+    label: 'Skill ATK Level', 
+    functionName: 'skillatklevel', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns offense level. Args: Self/Target, Coin index' 
+  },
+  { 
+    id: 'value-getskilllevel', 
+    label: 'Get Skill Level', 
+    functionName: 'getskilllevel', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns unit offense + skill offense level. Args: Self/Target' 
+  },
+  { 
+    id: 'value-skillatk', 
+    label: 'Skill ATK Type', 
+    functionName: 'skillatk', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns attack type. Args: Self/Target (0=Slash, 1=Pierce, 2=Blunt, 3=None)' 
+  },
+  { 
+    id: 'value-skillattribute', 
+    label: 'Skill Attribute', 
+    functionName: 'skillattribute', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns sin type. Args: Self/Target (0=Wrath, 1=Lust, 2=Sloth, 3=Gluttony, etc.)' 
+  },
+  { 
+    id: 'value-skilldeftype', 
+    label: 'Skill DEF Type', 
+    functionName: 'skilldeftype', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns defense type. Args: Self/Target (0=None, 1=Guard, 2=Evade, 3=Counter, etc.)' 
+  },
+  { 
+    id: 'value-skillrank', 
+    label: 'Skill Rank', 
+    functionName: 'skillrank', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns skill tier. Args: Self/Target' 
+  },
+  { 
+    id: 'value-skillegotype', 
+    label: 'Skill EGO Type', 
+    functionName: 'skillegotype', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns EGO type. Args: Self/Target (0=Skill, 1=Awaken, 2=Corrosion, etc.)' 
+  },
+  { 
+    id: 'value-amountattacks', 
+    label: 'Amount Attacks', 
+    functionName: 'amountattacks', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns number of skills attacking target. Args: Target' 
+  },
+  { 
+    id: 'value-coinisbroken', 
+    label: 'Coin Is Broken', 
+    functionName: 'coinisbroken', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns if coin is broken (1) or not (0). No arguments.' 
+  },
+  { 
+    id: 'value-skillslotcount', 
+    label: 'Skill Slot Count', 
+    functionName: 'skillslotcount', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns number of slots. Args: Target' 
+  },
+  { 
+    id: 'value-isfocused', 
+    label: 'Is Focused', 
+    functionName: 'isfocused', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns if battle is focused (1) or regular (0). No arguments.' 
+  },
+  { 
+    id: 'value-getdmgtaken', 
+    label: 'Get Damage Taken', 
+    functionName: 'getdmgtaken', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns damage taken. Args: Target, Type (prev=last turn, current=this turn)' 
+  },
+  { 
+    id: 'value-getbuffcount', 
+    label: 'Get Buff Count', 
+    functionName: 'getbuffcount', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns buff count. Args: Target, Type (neg=negative, pos=positive)' 
+  },
+  { 
+    id: 'value-unitcount', 
+    label: 'Unit Count', 
+    functionName: 'unitcount', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns number of units. Args: Target filter' 
+  },
+  { 
+    id: 'value-breakcount', 
+    label: 'Break Count', 
+    functionName: 'breakcount', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns stagger bars count. Args: Target' 
+  },
+  { 
+    id: 'value-breakvalue', 
+    label: 'Break Value', 
+    functionName: 'breakvalue', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns stagger bar value. Args: Target, Stagger index' 
+  },
+  { 
+    id: 'value-getbloodfeast', 
+    label: 'Get Bloodfeast', 
+    functionName: 'getbloodfeast', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns bloodfeast info. Args: Type (available=current, spent=used)' 
+  },
+  { 
+    id: 'value-getlevel', 
+    label: 'Get Level', 
+    functionName: 'getlevel', 
+    category: 'Value Acquisition', 
+    type: 'valueAcquisitionNode', 
+    description: 'Returns unit level. Args: Target' 
+  },
     { id: 'con-buf', label: 'Apply Buff', functionName: 'buf', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Applies a buff to the target.' },
     { id: 'con-bonusdmg', label: 'Bonus Damage', functionName: 'bonusdmg', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Deals bonus damage.' },
     { id: 'con-setdata', label: 'Set Data', functionName: 'setdata', category: 'Consequence', type: 'consequenceNode', nodeColor: nodeColors.Consequence, description: 'Sets encounter-persistent data.' },
@@ -1066,12 +1499,19 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
       let assignedScript = '';
 
       // Use the embedded node data directly
-      if (node.data.assignedNodeData) {
+  if (node.data.assignedNodeData) {
   let funcCall = '';
   let args = [];
   const funcName = node.data.assignedNodeData.functionName;
   
-  if (funcName === 'bufcheck') {
+   if (funcName === 'hpcheck') {
+    args = [
+      node.data.assignedNodeData.target,
+      node.data.assignedNodeData.mode
+    ];
+  } else if (funcName === 'mpcheck') {
+    args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'bufcheck') {
     args = [
       node.data.assignedNodeData.target,
       node.data.assignedNodeData.buff,
@@ -1087,29 +1527,50 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
       node.data.assignedNodeData.min,
       node.data.assignedNodeData.max
     ];
-  } else if (funcName === 'hpcheck') {
-    args = [
-      node.data.assignedNodeData.target,
-      node.data.assignedNodeData.mode
-    ];
-  } else if (funcName === 'mpcheck') {
-    args = [node.data.assignedNodeData.target];
   } else if (funcName === 'unitstate') {
     args = [node.data.assignedNodeData.target];
   } else if (funcName === 'getid') {
+    args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'getcharacterid') {
+    args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'instid') {
     args = [node.data.assignedNodeData.target];
   } else if (funcName === 'speedcheck') {
     args = [
       node.data.assignedNodeData.target,
       node.data.assignedNodeData.slot || ''
     ].filter(arg => arg !== '');
+  } else if (funcName === 'getpattern') {
+    args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'deadallies') {
+    args = [node.data.assignedNodeData.target];
   } else if (funcName === 'getshield') {
     args = [node.data.assignedNodeData.target];
+  } else if (funcName === 'areallied') {
+    args = [
+      node.data.assignedNodeData.target1,
+      node.data.assignedNodeData.target2
+    ];
+  } else if (funcName === 'getcoincount') {
+    args = [
+      node.data.assignedNodeData.target,
+      node.data.assignedNodeData.type
+    ];
+  } else if (funcName === 'allcoinstate') {
+    args = [
+      node.data.assignedNodeData.target,
+      node.data.assignedNodeData.type
+    ];
+  } else {
+    // For functions without parameters
+    funcCall = `${funcName}()`;
   }
-  // Add more function types as needed
   
-  const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-  funcCall = `${funcName}(${formattedArgs})`;
+  if (args.length > 0) {
+    const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+    funcCall = `${funcName}(${formattedArgs})`;
+  }
+  
   assignedScript = `${assignedValue}:${funcCall}/`;
 }
 
