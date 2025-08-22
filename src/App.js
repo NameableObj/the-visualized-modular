@@ -1121,66 +1121,89 @@ startEdges.forEach(edge => {
       </div>
 
       {/* --- Draggable Functions Palette --- */}
-      <div style={{
-  backgroundColor: paletteBgColor,
-  borderBottom: `1px solid ${paletteBorderColor}`,
-  padding: '10px 20px',
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '10px',
-  flexShrink: 0,
-  color: textColor,
-  maxHeight: isPaletteExpanded ? '300px' : '120px',
-  overflowY: 'auto',
-  position: 'relative',
-  transition: 'max-height 0.3s ease-in-out',
-}}>
-  <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
-  {filteredFunctions.map(func => (
-    <div
-      key={func.id}
-      className="dnd-node-palette"
-      draggable
-      onDragStart={(event) => onDragStart(event, func.type, func)}
-      onMouseEnter={(event) => handleMouseEnter(event, func)}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        padding: '8px 15px',
-        borderRadius: '5px',
-        border: `1px solid ${getThemedNodeData(func).borderColor}`,
-        background: getThemedNodeData(func).nodeColor,
-        color: getThemedNodeData(func).textColor,
-        cursor: 'grab',
-        fontSize: '0.9em',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {func.label} ({func.functionName})
-    </div>
-  ))}
-  
-  {/* Expand/Collapse Button */}
-  <button
+      <div style={{ position: 'relative', marginBottom: '15px' }}>
+  {/* Function Palette */}
+  <div style={{
+    backgroundColor: paletteBgColor,
+    border: `1px solid ${paletteBorderColor}`,
+    padding: '10px 20px',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '10px',
+    flexShrink: 0,
+    color: textColor,
+    maxHeight: isPaletteExpanded ? '300px' : '120px',
+    overflowY: 'auto',
+    transition: 'max-height 0.3s ease-in-out',
+    borderRadius: '8px',
+  }}>
+    <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
+    {filteredFunctions.map(func => (
+      <div
+        key={func.id}
+        className="dnd-node-palette"
+        draggable
+        onDragStart={(event) => onDragStart(event, func.type, func)}
+        onMouseEnter={(event) => handleMouseEnter(event, func)}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          padding: '8px 15px',
+          borderRadius: '5px',
+          border: `1px solid ${getThemedNodeData(func).borderColor}`,
+          background: getThemedNodeData(func).nodeColor,
+          color: getThemedNodeData(func).textColor,
+          cursor: 'grab',
+          fontSize: '0.9em',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {func.label} ({func.functionName})
+      </div>
+    ))}
+  </div>
+
+  {/* Extruded Tab - Positioned absolutely below the palette */}
+  <div
     onClick={() => setIsPaletteExpanded(!isPaletteExpanded)}
-    style={expandButtonStyle}
     onMouseEnter={(e) => {
-      e.target.style.backgroundColor = isDarkMode ? '#2a2a2a' : '#e8e8e8';
+      e.currentTarget.style.backgroundColor = isDarkMode ? '#2a2a2a' : '#e8e8e8';
     }}
     onMouseLeave={(e) => {
-      e.target.style.backgroundColor = paletteBgColor;
+      e.currentTarget.style.backgroundColor = paletteBgColor;
+    }}
+    style={{
+      position: 'absolute',
+      bottom: '-12px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '60px',
+      height: '12px',
+      backgroundColor: paletteBgColor,
+      border: `1px solid ${paletteBorderColor}`,
+      borderTop: 'none',
+      borderRadius: '0 0 8px 8px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
+      transition: 'background-color 0.2s ease',
+      boxShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.1)',
     }}
     title={isPaletteExpanded ? 'Collapse palette' : 'Expand palette'}
   >
-    <span style={{
-      fontSize: '12px',
-      color: textColor,
+    <div style={{
+      width: '16px',
+      height: '4px',
+      backgroundColor: textColor,
+      borderRadius: '2px',
+      opacity: 0.7,
+      transform: isPaletteExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
       transition: 'transform 0.3s ease',
-      transform: isPaletteExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
-    }}>
-      ▲
-    </span>
-  </button>
+      clipPath: isPaletteExpanded ? 'polygon(50% 0%, 0% 100%, 100% 100%)' : 'polygon(0% 0%, 100% 0%, 50% 100%)'
+    }} />
+  </div>
   
         {hoveredFunction && (
           <div
