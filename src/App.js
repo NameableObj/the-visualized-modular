@@ -1660,10 +1660,9 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
             queue.push(edge.target);
           }
         });
-      } else {
-        // ... existing node handling ...
+      } else if (funcName === 'math') {
+      args = [node.data.assignedNodeData.expression || ''];
       }
-
       // Continue traversal for other nodes
       const nextEdges = edgeMap.get(`${node.id}-output`) || [];
       nextEdges.forEach(edge => {
@@ -1685,10 +1684,6 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
   if (!script.endsWith('/')) {
     script += '/';
   }
-
-  if (funcName === 'math') {
-  args = [funcData.expression || ''];
-}
 
   setGeneratedScript(script);
   setShowExportModal(true);
