@@ -1011,47 +1011,56 @@ if (node.type === 'ifNode') {
   // Don't add an extra slash here - the consequence node will add its own
   // subScript += '/'; // This was causing the double slash
 } else {
-      let functionCall = node.data.functionName;
-      let args = [];
-      if (node.data.functionName === 'bufcheck') {
-        args = [node.data.target, node.data.buff, node.data.mode];
-      } else if (node.data.functionName === 'getdata') {
-        args = [node.data.target, node.data.id];
-      } else if (node.data.functionName === 'unitstate') {
-        args = [node.data.target];
-      } else if (node.data.functionName === 'random') {
-        args = [node.data.min, node.data.max];
-        const varName = `VALUE_${variableCounter++}`;
-        generatedVariables.set(node.id, varName);
-        functionCall = `${varName}:${functionCall}`;
-      } else if (node.data.functionName === 'buf') {
-        args = [node.data.target, node.data.buff, node.data.potency, node.data.count, node.data.activeRound];
-      } else if (node.data.functionName === 'bonusdmg') {
-        args = [node.data.target, node.data.amount, node.data.dmgType, node.data.sinType];
-      } else if (node.data.functionName === 'setdata') {
-        args = [node.data.target, node.data.id, node.data.value];
-      } else if (node.data.functionName === 'scale') {
-        args = [node.data.amount, node.data.operator];
-      } else if (node.data.functionName === 'dmgmult') {
-        args = [node.data.amount];
-      } else if (node.data.functionName === 'breakrecover') {
-        args = [node.data.target];
-      }
+  let functionCall = node.data.functionName;
+  let args = [];
+  if (node.data.functionName === 'bufcheck') {
+    args = [node.data.target, node.data.buff, node.data.mode];
+  } else if (node.data.functionName === 'getdata') {
+    args = [node.data.target, node.data.id];
+  } else if (node.data.functionName === 'unitstate') {
+    args = [node.data.target];
+  } else if (node.data.functionName === 'random') {
+    args = [node.data.min, node.data.max];
+    const varName = `VALUE_${variableCounter++}`;
+    generatedVariables.set(node.id, varName);
+    functionCall = `${varName}:${functionCall}`;
+  } else if (node.data.functionName === 'buf') {
+    args = [node.data.target, node.data.buff, node.data.potency, node.data.count, node.data.activeRound];
+  } else if (node.data.functionName === 'bonusdmg') {
+    args = [node.data.target, node.data.amount, node.data.dmgType, node.data.sinType];
+  } else if (node.data.functionName === 'setdata') {
+    args = [node.data.target, node.data.id, node.data.value];
+  } else if (node.data.functionName === 'scale') {
+    args = [node.data.amount, node.data.operator];
+  } else if (node.data.functionName === 'dmgmult') {
+    args = [node.data.amount];
+  } else if (node.data.functionName === 'breakrecover') {
+    args = [node.data.target];
+  }
 
       // Replace arguments with variable names if a connection exists
-      const inputEdges = edges.filter(edge => edge.target === node.id);
-      inputEdges.forEach(edge => {
-        const varName = generatedVariables.get(edge.source);
-        if (varName) {
-          const argIndex = ['random'].includes(node.data.functionName) ? 0 : 0; // Simplified for now
-          args[argIndex] = varName;
-        }
-      });
+        const inputEdges = edges.filter(edge => edge.target === node.id);
+  inputEdges.forEach(edge => {
+    const varName = generatedVariables.get(edge.source);
+    if (varName) {
+      const argIndex = ['random'].includes(node.data.functionName) ? 0 : 0; // Simplified for now
+      args[argIndex] = varName;
+    }
+  });
+
 
       // Filter out undefined/null arguments
-      const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
-      subScript += `${functionCall}(${formattedArgs})/`;
+       const formattedArgs = args.filter(arg => arg !== undefined && arg !== null).join(',');
+
+        let functionString = `${functionCall}(${formattedArgs})`;
+  if (!functionString.endsWith('/')) {
+    functionString += '/';
+  }
+  subScript += functionString;
+  
     }
+
+    
 
     // FIX: This part was not being executed for assignment nodes due to the continue statement
     const nextEdges = edgeMap.get(`${node.id}-output`) || [];
