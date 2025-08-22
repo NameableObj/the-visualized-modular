@@ -997,15 +997,20 @@ if (timingNode.data.hasParameters && timingNode.data.parameters) {
       continue; // Skip the rest of the processing for assignment nodes
     }
 
-    if (node.type === 'ifNode') {
-      subScript += `IF(${node.data.condition}):`;
+    
+if (node.type === 'ifNode') {
+  subScript += `IF(${node.data.condition}):`;
 
-      const trueEdges = edgeMap.get(`${node.id}-true`) || [];
-      if (trueEdges.length > 0) {
-        subScript += traverseGraph(trueEdges[0].target);
-      }
-      subScript += '/';
-    } else {
+  const trueEdges = edgeMap.get(`${node.id}-true`) || [];
+  if (trueEdges.length > 0) {
+    const trueBranchScript = traverseGraph(trueEdges[0].target);
+    // Remove trailing slash if present to avoid double slashes
+    subScript += trueBranchScript.endsWith('/') ? trueBranchScript.slice(0, -1) : trueBranchScript;
+  }
+  
+  // Don't add an extra slash here - the consequence node will add its own
+  // subScript += '/'; // This was causing the double slash
+} else {
       let functionCall = node.data.functionName;
       let args = [];
       if (node.data.functionName === 'bufcheck') {
