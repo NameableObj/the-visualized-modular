@@ -893,12 +893,12 @@ const nodeColors = useMemo(() => ({
     });
 
     const timingNode = nodes.find(node => node.type === 'timingNode');
-    if (node.type === 'timingNode') {
-  if (node.data.hasParameters && node.data.parameters) {
-    const params = Object.values(node.data.parameters).join(',');
-    script += `TIMING:${node.data.functionName}(${params})/`;
+    if (nodes.type === 'timingNode') {
+  if (nodes.data.hasParameters && nodes.data.parameters) {
+    const params = Object.values(nodes.data.parameters).join(',');
+    script += `TIMING:${nodes.data.functionName}(${params})/`;
   } else {
-    script += `TIMING:${node.data.functionName}/`;
+    script += `TIMING:${nodes.data.functionName}/`;
   }
 }
 
