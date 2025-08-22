@@ -28,24 +28,7 @@ const TimingNode = ({ id, data }) => {
   data.onDataChange(id, { ...data, parameters: updatedParams });
 };
 
-const [isPaletteExpanded, setIsPaletteExpanded] = useState(false);
 
-const expandButtonStyle = {
-  position: 'absolute',
-  bottom: '5px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 10,
-  padding: '2px 10px',
-  borderRadius: '3px',
-  border: `1px solid ${buttonBorderColor}`,
-  backgroundColor: buttonBgColor,
-  color: textColor,
-  cursor: 'pointer',
-  fontSize: '0.8em',
-  opacity: 0.8,
-  transition: 'opacity 0.2s',
-};
 
   return (
     <div className="custom-node" style={{ background: data.nodeColor, color: data.textColor, borderColor: data.borderColor }}>
@@ -347,12 +330,30 @@ function Flow() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [isPaletteExpanded, setIsPaletteExpanded] = useState(false);
   const [hoveredFunction, setHoveredFunction] = useState(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const [showExportModal, setShowExportModal] = useState(false);
   const [generatedScript, setGeneratedScript] = useState('');
 
   const toggleDarkMode = () => setIsDarkMode((prevMode) => !prevMode);
+
+  const expandButtonStyle = {
+  position: 'absolute',
+  bottom: '5px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: 10,
+  padding: '2px 10px',
+  borderRadius: '3px',
+  border: `1px solid ${buttonBorderColor}`,
+  backgroundColor: buttonBgColor,
+  color: textColor,
+  cursor: 'pointer',
+  fontSize: '0.8em',
+  opacity: 0.8,
+  transition: 'opacity 0.2s',
+};
 
   // FIX: Memoized nodeColors object so it doesn't change on every render
 const nodeColors = useMemo(() => ({
@@ -1132,7 +1133,7 @@ startEdges.forEach(edge => {
   position: 'relative', // For absolute positioning of the button
   transition: 'max-height 0.3s ease-in-out', // Smooth expansion animation
 }}>
-         <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
+  <h3 style={{ width: '100%', margin: '0 0 10px 0', color: textColor }}>Available Functions:</h3>
   {filteredFunctions.map(func => (
     <div
       key={func.id}
@@ -1152,11 +1153,11 @@ startEdges.forEach(edge => {
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         whiteSpace: 'nowrap',
       }}
-  >
-    {func.label} ({func.functionName})
+    >
+      {func.label} ({func.functionName})
     </div>
   ))}
-
+  
   {/* Expand/Collapse Button */}
   <button
     onClick={() => setIsPaletteExpanded(!isPaletteExpanded)}
@@ -1167,7 +1168,7 @@ startEdges.forEach(edge => {
   >
     {isPaletteExpanded ? '▲ Collapse' : '▼ Expand'}
   </button>
-  
+
         {hoveredFunction && (
           <div
             style={{
