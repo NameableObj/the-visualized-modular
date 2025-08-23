@@ -565,19 +565,24 @@ const IfNode = ({ id, data }) => {
       <Handle type="target" position={Position.Left} id="input" style={{ background: data.textColor }} />
       <strong>IF Statement</strong>
       <div style={{ marginTop: '10px' }}>
-        <div style={{ marginBottom: '10px' }}>
-          <select 
-            value={data.logicalOperator || 'AND'} 
-            onChange={handleChange('logicalOperator')}
-          >
-            <option value="AND">AND</option>
-            <option value="OR">OR</option>
-            <option value="XOR">XOR</option>
-          </select>
-        </div>
+        {/* Logical Operator Dropdown (only shown when multiple conditions exist) */}
+        {(data.conditions && data.conditions.length > 1) && (
+          <div style={{ marginBottom: '10px' }}>
+            <select 
+              value={data.logicalOperator || 'AND'} 
+              onChange={handleChange('logicalOperator')}
+            >
+              <option value="AND">AND</option>
+              <option value="OR">OR</option>
+              <option value="XOR">XOR</option>
+            </select>
+          </div>
+        )}
         
+        {/* Condition Inputs */}
         {(data.conditions || []).map((condition, index) => (
-          <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+          <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px', flexWrap: 'wrap' }}>
+            {/* Left Operand Dropdown */}
             <select 
               value={condition.left || 'VALUE_0'} 
               onChange={handleChange('left', index)}
@@ -588,6 +593,7 @@ const IfNode = ({ id, data }) => {
               ))}
             </select>
             
+            {/* Operator Dropdown */}
             <select 
               value={condition.operator || '>'} 
               onChange={handleChange('operator', index)}
@@ -596,17 +602,18 @@ const IfNode = ({ id, data }) => {
               <option value=">">{'>'}</option>
               <option value="<">{'<'}</option>
               <option value="=">{'='}</option>
-              <option value="!=">{'!='}</option>
             </select>
             
+            {/* Right Operand Input */}
             <input 
               type="text" 
               value={condition.right || ''} 
               onChange={handleChange('right', index)}
-              placeholder="Value" 
-              style={{ width: '60px', marginRight: '5px' }}
+              placeholder="Value or VALUE_X" 
+              style={{ width: '80px', marginRight: '5px' }}
             />
             
+            {/* Remove Condition Button */}
             <button 
               onClick={() => removeCondition(index)}
               style={{ background: 'red', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
@@ -616,6 +623,7 @@ const IfNode = ({ id, data }) => {
           </div>
         ))}
         
+        {/* Add Condition Button */}
         <button 
           onClick={addCondition}
           style={{ marginTop: '10px', padding: '5px 10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
