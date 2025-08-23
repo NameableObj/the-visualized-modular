@@ -1755,9 +1755,8 @@ const generateScript = useCallback(() => {
     return;
   }
 
-  // Handle parameterized timing functions - FIXED
+  // Handle parameterized timing functions
   if (timingNode.data.hasParameters && timingNode.data.parameters) {
-    // Extract parameter values in correct order
     const params = [];
     if (timingNode.data.parameters.var_1) params.push(timingNode.data.parameters.var_1);
     if (timingNode.data.parameters.var_2) params.push(timingNode.data.parameters.var_2);
@@ -1780,11 +1779,31 @@ const generateScript = useCallback(() => {
       const node = nodeMap.get(nodeId);
       if (!node) continue;
 
+      // Handle different node types
       if (node.type === 'assignmentNode') {
-        // Handle assignment nodes (existing code)
-        // ... (keep your existing assignment node handling code)
+        const funcData = node.data.assignedNodeData;
+        if (funcData) {
+          const funcName = funcData.functionName;
+          let args = [];
+          
+          // Handle each function type
+          if (funcName === 'hpcheck') {
+            args = [funcData.target || 'Self', funcData.mode || 'normal'];
+          }
+          // Add more function types as needed
+          
+          subScript += `${node.data.variable}:${funcName}(${args.join(',')})/`;
+        }
+        
+        // Continue traversal
+        const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+        nextEdges.forEach(edge => {
+          if (!visited.has(edge.target)) {
+            queue.push(edge.target);
+          }
+        });
       } else if (node.type === 'ifNode') {
-        // Build condition string - FIXED
+        // Build condition string
         let conditionStr = '';
         if (node.data.conditions && node.data.conditions.length > 0) {
           if (node.data.conditions.length === 1) {
@@ -1818,16 +1837,39 @@ const generateScript = useCallback(() => {
         }
         
         subScript += '/';
-      } else if (node.type === 'valueAcquisitionNode') {
-        // Handle value acquisition nodes (existing code)
-        // ... (keep your existing value acquisition node handling code)
       } else if (node.type === 'consequenceNode') {
-        // Handle consequence nodes (existing code)
-        // ... (keep your existing consequence node handling code)
-      }
-      
-      // Continue traversal for non-IF nodes
-      if (node.type !== 'ifNode') {
+        // Handle consequence nodes
+        let args = [];
+        if (node.data.functionName === 'buf') {
+          args = [
+            node.data.target || 'Self',
+            node.data.buff || 'Enhancement',
+            node.data.potency || '0',
+            node.data.count || '0',
+            node.data.activeRound || '0'
+          ];
+          subScript += `buf(${args.join(',')})/`;
+        } else if (node.data.functionName === 'bonusdmg') {
+          args = [
+            node.data.target || 'Target',
+            node.data.amount || '0',
+            node.data.dmgType || '-1',
+            node.data.sinType || '0'
+          ];
+          subScript += `bonusdmg(${args.join(',')})/`;
+        }
+        // Add more consequence types as needed
+        
+        // Continue traversal
+        const nextEdges = edgeMap.get(`${node.id}-output`) || [];
+        nextEdges.forEach(edge => {
+          if (!visited.has(edge.target)) {
+            queue.push(edge.target);
+          }
+        });
+      } else if (node.type === 'valueAcquisitionNode') {
+        // Handle value acquisition nodes (they should be connected to assignment nodes, not directly in the flow)
+        // Continue traversal
         const nextEdges = edgeMap.get(`${node.id}-output`) || [];
         nextEdges.forEach(edge => {
           if (!visited.has(edge.target)) {
