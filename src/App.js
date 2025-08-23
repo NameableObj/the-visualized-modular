@@ -1674,7 +1674,7 @@ const nodeColors = useMemo(() => ({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
- const onDrop = useCallback(
+const onDrop = useCallback(
   (event) => {
     event.preventDefault();
 
@@ -1695,31 +1695,33 @@ const nodeColors = useMemo(() => ({
       const newNodeId = `${nodeType}-${Date.now()}`;
 
       // Initialize parameters for parameterized timing functions
-      let nodeData = {...functionData};
-if (nodeType === 'timingNode' && functionData.hasParameters) {
-  const initialParams = {};
-  if (functionData.parameters) {
-    functionData.parameters.forEach(param => {
-      initialParams[param.name] = param.defaultValue;
-    });
-  }
-  nodeData = { 
-    ...functionData, 
-    parameters: initialParams,
-    hasParameters: true 
-  };
-}
+      let nodeData = { ...functionData };
+      if (nodeType === 'timingNode' && functionData.hasParameters) {
+        // Set default values for parameters
+        const initialParams = {};
+        if (functionData.parameters) {
+          functionData.parameters.forEach(param => {
+            // Set the default value based on the parameter definition
+            initialParams[param.name] = param.defaultValue || 'None';
+          });
+        }
+        nodeData = {
+          ...functionData,
+          parameters: initialParams,
+          hasParameters: true
+        };
+      }
 
-const newNode = {
-  id: newNodeId,
-  type: nodeType,
-  position,
-  data: {
-    ...getThemedNodeData(functionData),
-    conditions: [],
-    logicalOperator: 'AND'
-  },
-};
+      const newNode = {
+        id: newNodeId,
+        type: nodeType,
+        position,
+        data: {
+          ...getThemedNodeData(nodeData),
+          conditions: [],
+          logicalOperator: 'AND'
+        },
+      };
 
       setNodes((nds) => nds.concat(newNode));
     }
@@ -1779,21 +1781,24 @@ const generateScript = useCallback(() => {
       const node = nodeMap.get(nodeId);
       if (!node) continue;
 
-      // Handle different node types
       if (node.type === 'assignmentNode') {
         const funcData = node.data.assignedNodeData;
-        if (funcData) {
-          const funcName = funcData.functionName;
-          let args = [];
-          
-          // Handle each function type
-          if (funcName === 'hpcheck') {
-            args = [funcData.target || 'Self', funcData.mode || 'normal'];
-          }
-          // Add more function types as needed
-          
-          subScript += `${node.data.variable}:${funcName}(${args.join(',')})/`;
+        if (!funcData) {
+          // If there's no assigned function, skip or handle error
+          return;
         }
+        
+        const funcName = funcData.functionName;
+        let args = [];
+        
+        // Handle each function type
+        if (funcName === 'hpcheck') {
+          args = [funcData.target || 'Self', funcData.mode || 'normal'];
+        }
+        // Add more function types as needed
+        
+        // Build the script part for assignment
+        subScript += `${node.data.variable || 'VALUE_0'}:${funcName}(${args.join(',')})/`;
         
         // Continue traversal
         const nextEdges = edgeMap.get(`${node.id}-output`) || [];
@@ -1867,15 +1872,6 @@ const generateScript = useCallback(() => {
             queue.push(edge.target);
           }
         });
-      } else if (node.type === 'valueAcquisitionNode') {
-        // Handle value acquisition nodes (they should be connected to assignment nodes, not directly in the flow)
-        // Continue traversal
-        const nextEdges = edgeMap.get(`${node.id}-output`) || [];
-        nextEdges.forEach(edge => {
-          if (!visited.has(edge.target)) {
-            queue.push(edge.target);
-          }
-        });
       }
     }
     return subScript;
@@ -1887,11 +1883,9 @@ const generateScript = useCallback(() => {
     script += traverseGraph(edge.target);
   });
 
-  // Ensure the script always ends with a slash
-  if (!script.endsWith('/')) {
-    script += '/';
-  }
-
+  // Remove any double slashes at the end
+  script = script.replace(/\/+$/, '/');
+  
   setGeneratedScript(script);
   setShowExportModal(true);
 }, [nodes, edges, setNodes, onNodeDataChange]);
