@@ -1817,7 +1817,7 @@ const generateScript = useCallback(() => {
         // Add more function types as needed
         
         // Build the script part for assignment
-        subScript += `ASSIGN:${node.data.variable},${funcName}(${args.join(',')})/`;
+        subScript += `${node.data.variable}:${funcName}(${args.join(',')})/`;
         
         // Continue traversal
         const nextEdges = edgeMap.get(`${node.id}-output`) || [];
